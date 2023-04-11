@@ -5,9 +5,19 @@ user_deploy_app=$1
 sidekiq_version=$2
 project_path=$3
 sidekiq_file_name=$4
-service_name="${sidekiq_file_name}_v${sidekiq_version}"
+project_name=$5
+service_name="${project_name}_${sidekiq_file_name}_v${sidekiq_version}"
+# Kiểm tra file sidekiq
+sidekiq_full_path="${user_deploy_app}/config/${sidekiq_file_name}.yml"
+if ! test -e $sidekiq_full_path; then
+  echo ""
+  echo "=====> ERROR: Không tìm thấy file $sidekiq_full_path."
+  echo ""
+  exit 126
+fi
 
-if [ $sidekiq_version -eq 6 ]; then
+echo $sidekiq_version
+if [ $sidekiq_version == 6 ]; then
 cat > /etc/systemd/system/$service_name.service << EOF
 [Unit]
 Description=Sidekiq Background Processor
@@ -28,7 +38,7 @@ WantedBy=multi-user.target
 EOF
 echo "Create success service ${service_name}.service"
 
-elif [$sidekiq_version -eq 7]
+elif [$sidekiq_version == 7]; then
 cat > /etc/systemd/system/$service_name.service << EOF
 [Unit]
 Description=Sidekiq Background Processor
@@ -51,7 +61,9 @@ EOF
 echo "Create success service ${service_name}.service"
 
 else
-  echo "Chỉ hỗ trợ cài đặt sidekiq 6/7 xin vui lòng nhập đúng"
+  echo ""
+  echo "+++Chỉ hỗ trợ cài đặt sidekiq 6/7 xin vui lòng nhập đúng+++"
+  echo ""
 fi
 
 sudo systemctl daemon-reload
