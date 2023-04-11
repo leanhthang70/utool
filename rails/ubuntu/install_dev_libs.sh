@@ -9,6 +9,10 @@ echo "=== Install Node JS ==="
 curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
+echo "=== Install Nginx ==="
+sudo apt-get install -y nginx
+sudo systemctl enable nginx
+
 echo "=== Install ASDF ==="
 cd
 git clone https://github.com/excid3/asdf.git ~/.asdf
@@ -17,8 +21,5 @@ echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
 echo 'legacy_version_file = yes' >> ~/.asdfrc
 echo 'export EDITOR="code --wait"' >> ~/.bashrc
 exec $SHELL &
-asdf plugin-add ruby
-asdf plugin-add nodejs
-asdf plugin-add golang
 
 echo "==================== END ===================="

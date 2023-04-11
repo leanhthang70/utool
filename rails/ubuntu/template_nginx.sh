@@ -23,4 +23,4 @@ EOF
 
 ln -s /etc/nginx/sites-available/$domain /etc/nginx/sites-enabled/
 
-service nginx reload
+sudo service nginx reload
