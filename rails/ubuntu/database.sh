@@ -1,6 +1,6 @@
 #!/bin/bash
 
-db_type=$1
+read -p "=> Choose database (PostgreSQL enter 1/ MySQL enter 2): " db_type
 
 if [$db_type -eq 1 ]; then
   echo "=== Install postgreSQL 15 ==="

@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # Lấy giá trị của sidekiq version, project path và sidekiq file từ các tham số dòng lệnh
-user_deploy_app=$1
-sidekiq_version=$2
-project_path=$3
-sidekiq_file_name=$4
-project_name=$5
+read -p "=> Enter user deploy: " user_deploy_app
+read -p "=> Sidekiq version 6/7: " sidekiq_version
+read -p "=> Project path: " project_path
+read -p "=> Sidekiq file name: " sidekiq_file_name
+read -p "=> Project alias name: " project_name
+
+
 service_name="${project_name}_${sidekiq_file_name}_v${sidekiq_version}"
 # Kiểm tra file sidekiq
 sidekiq_full_path="${user_deploy_app}/config/${sidekiq_file_name}.yml"

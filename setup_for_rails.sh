@@ -11,6 +11,7 @@ menu="
   5. Install Database PostgreSQL 15/ MySQL 8
   6. Install Rails
   7. Add Domain (Nginx/Host)
+  9. Install Mina deploy
   9. Install docker
   11. test
   Exit (q/quit/exit)
@@ -28,25 +29,17 @@ while true; do
     2)
       sh $root_path/rails/ubuntu/image_lib.sh;;
     3)
-      read -p "=> Enter user deploy: " user_deploy_app
-      read -p "=> Sidekiq version 6/7: " sidekiq_version
-      read -p "=> Project path: " project_path
-      read -p "=> Sidekiq file name: " sidekiq_file_name
-      read -p "=> Project alias name: " project_name
-      sh $root_path/rails/ubuntu/sidekiq.sh $user_deploy_app $sidekiq_version $project_path $sidekiq_file_name $project_name;;
+      sh $root_path/rails/ubuntu/sidekiq.sh;;
     4)
-      read -p "=> Nhập user mới domain_name: " user_name
-      sh $root_path/rails/ubuntu/user.sh $user_name;;
+      sh $root_path/rails/ubuntu/user.sh;;
     5)
-      read -p "=> Choose database (PostgreSQL enter 1/ MySQL enter 2): " db_type
-      sh $root_path/rails/ubuntu/database.sh db_type;;
+      sh $root_path/rails/ubuntu/database.sh;;
     6)
       sh $root_path/rails/ubuntu/rails_setup.sh;;
     7)
-      read -p "=> Nhập domain_name: " domain_name
-      sh $root_path/rails/ubuntu/template_nginx.sh $domain_name;;
+      sh $root_path/rails/ubuntu/nginx_ssl.sh;;
     q|0|quit|exit)
-      if [ "$input" == "q" ] || [ "$input" == "quit" ] || [ "$input" == "exit" ]; then
+      if [ "$input" == "q" ] ]; then
         break
       fi;;
   esac

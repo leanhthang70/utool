@@ -13,13 +13,22 @@ echo "=== Install Nginx ==="
 sudo apt-get install -y nginx
 sudo systemctl enable nginx
 
-echo "=== Install ASDF ==="
+echo "=== Install Redis ==="
+sudo apt-get install redis-server -y
+sudo systemctl enable redis-server
+sudo systemctl restart redis-server
+
+echo "=== Install RBENV ==="
 cd
-git clone https://github.com/excid3/asdf.git ~/.asdf
-echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
-echo '. "$HOME/.asdf/completions/asdf.bash"' >> ~/.bashrc
-echo 'legacy_version_file = yes' >> ~/.asdfrc
-echo 'export EDITOR="code --wait"' >> ~/.bashrc
-exec $SHELL &
+git clone https://github.com/rbenv/rbenv.git ~/.rbenv
+git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
+echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+source ~/.bashrc
+rbenv -v
+
+echo "=== Install Let's Encrypt SSL ==="
+sudo apt update && sudo apt upgrade
+sudo apt install certbot -y
 
 echo "==================== END ===================="
