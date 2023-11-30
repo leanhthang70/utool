@@ -3,4 +3,4 @@ cd && mkdir .utool && cd .utool && curl -L -o utool.tar.gz https://github.com/le
 tar -xzf utool.tar.gz && mv server-setup-0.0.1 . && rm utool.tar.gz && rm -rf server-setup-0.0.1
 echo "alias utool='source $HOME/.utool/utool.sh'" | sudo tee -a ~/.bashrc
 source ~/.bashrc
-cd && rm build_utool.sh
+cd && rm build_utool
