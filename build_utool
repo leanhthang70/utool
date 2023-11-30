@@ -1,5 +1,5 @@
 #!/bin/bash
-cd && mkdir .utool && cd .utool && curl -L -o utool.tar.gz https://github.com/leanhthang/server-setup/archive/refs/tags/v0.0.1.tar.gz
+cd && mkdir -p .utool && cd .utool && curl -L -o utool.tar.gz https://github.com/leanhthang/server-setup/archive/refs/tags/v0.0.1.tar.gz
 tar -xzf utool.tar.gz && mv server-setup-0.0.1 . && rm utool.tar.gz && rm -rf server-setup-0.0.1
 exec_path="alias utool='source $HOME/.utool/utool.sh'"
 grep -v $exec_path ~/.bashrc > temp_file && mv temp_file ~/.bashrc
