@@ -3,6 +3,6 @@ cd && rm -rf .utool && mkdir -p .utool && cd .utool && curl -L -o utool.tar.gz h
 tar -xzf utool.tar.gz && mv server-setup-0.0.1/* . && rm utool.tar.gz && rm -rf server-setup-0.0.1
 EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
 grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
-echo "$exec_path" | sudo tee -a ~/.bashrc
+echo "$EXEC_PATH" | sudo tee -a ~/.bashrc
 source ~/.bashrc
 cd && rm build_utool
