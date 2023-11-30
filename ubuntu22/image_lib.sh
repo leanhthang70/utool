@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "=== Install Image Processing ==="
+sudo apt update
 
 sudo apt install libvips-dev -y
 sudo apt install optipng -y
@@ -15,3 +16,8 @@ cd mozjpeg
 mkdir build && cd build
 sudo cmake -G "Unix Makefiles" ../
 sudo make install
+
+# ImageMagick
+sudo apt install imagemagick -y
+
+sudo apt install ffmpeg -y

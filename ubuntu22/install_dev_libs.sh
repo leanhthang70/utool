@@ -11,12 +11,13 @@ sudo apt-get install -y nodejs
 
 echo "=== Install Nginx ==="
 sudo apt-get install -y nginx
+sudo systemctl start nginx
 sudo systemctl enable nginx
 
 echo "=== Install Redis ==="
 sudo apt-get install redis-server -y
+sudo systemctl start redis-server
 sudo systemctl enable redis-server
-sudo systemctl restart redis-server
 
 echo "=== Install RBENV ==="
 cd
