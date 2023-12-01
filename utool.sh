@@ -45,14 +45,6 @@ while true; do
         break
       fi;;
   esac
-
-  echo "=================== END ===================="
-  echo ""
-  read -p "=> Nhập bất kỳ để tiếp tục hoặc q để kết thúc: " NEW_INPUT
-
-  if [ "$NEW_INPUT" == "q" ]; then
-    break
-  fi
 done
 
 
