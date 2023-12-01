@@ -5,7 +5,7 @@ Utool is a powerful tool support configuring servers, it verry lightweight and p
 ### How to install UTool
 
 ```bash
-cd && curl -O https://raw.githubusercontent.com/leanhthang/server-setup/main/build_utool && bash build_utool v0.0.2
+cd && curl -O https://raw.githubusercontent.com/leanhthang/server-setup/main/build_utool && bash build_utool 0.0.2
 ```
 
 ### How to remove UTool
