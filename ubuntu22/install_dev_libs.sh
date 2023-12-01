@@ -19,15 +19,6 @@ sudo apt-get install redis-server -y
 sudo systemctl start redis-server
 sudo systemctl enable redis-server
 
-echo "=== Install RBENV ==="
-cd
-git clone https://github.com/rbenv/rbenv.git ~/.rbenv
-git clone https://github.com/rbenv/ruby-build.git ~/.rbenv/plugins/ruby-build
-echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
-echo 'eval "$(rbenv init -)"' >> ~/.bashrc
-source ~/.bashrc
-rbenv -v
-
 echo "=== Install Let's Encrypt SSL ==="
 sudo apt update && sudo apt upgrade
 sudo apt install certbot -y
