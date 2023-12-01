@@ -7,3 +7,11 @@ Utool is a powerful tool support configuring servers, it verry lightweight and p
 ```bash
 cd && curl -O https://raw.githubusercontent.com/leanhthang/server-setup/main/build_utool && bash build_utool
 ```
+
+### How to remove UTool
+
+```bash
+cd && rm -rf .utool
+# open ~/.bashrc remove line below
+alias utool='source $HOME/.utool/utool.sh'
+```
