@@ -62,6 +62,6 @@ server {
 }
 EOF
 
-ln -s /etc/nginx/sites-available/$nginx_file /etc/nginx/sites-enabled/
-
+sudo ln -s /etc/nginx/sites-available/$nginx_file /etc/nginx/sites-enabled/
+sudo nginx -t
 sudo service nginx reload

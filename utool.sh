@@ -25,7 +25,7 @@ while true; do
   echo "=================== START ===================="
   case "$INPUT" in
     1)
-      sh $SCRIPT_DIR/ubuntu22/install_dev_libs.sh;;
+      sh $SCRIPT_DIR/ubuntu22/install_common_dev_libs.sh;;
     2)
       sh $SCRIPT_DIR/ubuntu22/image_lib.sh;;
     3)
