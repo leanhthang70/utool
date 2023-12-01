@@ -10,8 +10,8 @@ rm utool.tar.gz
 rm -rf server-setup-0.0.1
 EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
 grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
-sleep 1
 echo "$EXEC_PATH" | sudo tee -a ~/.bashrc
+sleep 1
 cd
 rm build_utool
 source ~/.bashrc
