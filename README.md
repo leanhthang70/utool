@@ -15,3 +15,8 @@ cd && rm -rf .utool
 # open ~/.bashrc remove line below
 alias utool='source $HOME/.utool/utool.sh'
 ```
+### How to use
+
+```bash
+utool
+```
