@@ -13,6 +13,7 @@ MENU="
   7. Add Domain (Nginx/Host)
   8. Setup capitrano deploy
   9. Install docker
+  100. Install docker
   Exit (q/quit/exit)
   Select one number: "
 
@@ -39,6 +40,8 @@ while true; do
     7)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     9)
+      sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
+    100)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     q|0|quit|exit)
       if [ "$INPUT" == "q" ] ]; then
