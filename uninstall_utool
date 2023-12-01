@@ -1,7 +1,11 @@
 #!/bin/bash
 
-cd && rm -rf .utool
-EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
-grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
-sleep 1
-source ~/.bashrc
+read -p "=> Do you want to remove UTool? Yes(y): " option
+if [ "$option" == "y" ]; then
+  cd && rm -rf .utool
+  EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
+  grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
+  sleep 1
+  source ~/.bashrc
+  exit 0
+fi

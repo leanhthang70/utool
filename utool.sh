@@ -42,12 +42,20 @@ while true; do
     9)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     100)
-      sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
+      bash $SCRIPT_DIR/uninstall_utool;;
     q|0|quit|exit)
       if [ "$INPUT" == "q" ] ]; then
         break
       fi;;
   esac
+
+  echo "=================== END ===================="
+  echo ""
+  read -p "=> Nhập bất kỳ để tiếp tục hoặc q để kết thúc: " NEW_INPUT
+
+  if [ "$NEW_INPUT" == "q" ]; then
+    exit 0
+  fi
 done
 
 
