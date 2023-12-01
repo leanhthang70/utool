@@ -54,7 +54,7 @@ while true; do
   read -p "=> Nhập bất kỳ để tiếp tục hoặc q để kết thúc: " NEW_INPUT
 
   if [ "$NEW_INPUT" == "q" ]; then
-    exit 0
+    break
   fi
 done
 
