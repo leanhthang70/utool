@@ -15,6 +15,6 @@ elif [ "$db_type" -eq 2 ]; then
   echo "=== Install MySQL 8 ==="
   sudo apt-get install mysql-server mysql-client libmysqlclient-dev
 else
-  echo "Chỉ hỗ trợ cài đặt postgreSQL/ MySQL xin vui lòng nhập đúng"
+  echo "Wrong input option (only 1 or 2) ! "
 fi
 

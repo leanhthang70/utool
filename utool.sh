@@ -13,6 +13,7 @@ MENU="
   7. Add Domain (Nginx/Host)
   8. Setup capitrano deploy
   9. Install docker
+  10. SmartGit UI (Wsl2)
   100. Install docker
   Exit (q/quit/exit)
   Select one number: "
@@ -41,6 +42,8 @@ while true; do
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     9)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
+    10)
+      sh $SCRIPT_DIR/ubuntu22/wsl2_ui.sh;;
     100)
       bash $SCRIPT_DIR/uninstall_utool;;
     q|0|quit|exit)
