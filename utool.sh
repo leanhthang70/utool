@@ -13,7 +13,7 @@ MENU="
   7. Add Domain (Nginx/Host)
   8. Setup capitrano deploy
   9. Install docker
-  10. SmartGit UI (Wsl2)
+  10. WSLSmartGit UI ()
   100. Install docker
   Exit (q/quit/exit)
   Select one number: "

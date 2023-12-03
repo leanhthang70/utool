@@ -1,11 +1,17 @@
 #!/bin/bash
 
+# Get UTool version (0.0.6)
 UTOOL_VERSION="$1"
+
+# Pull script install
 cd && rm -rf .utool && mkdir -p .utool && cd .utool
 curl -L -o utool.tar.gz https://github.com/leanhthang/server-setup/archive/refs/tags/v$UTOOL_VERSION.tar.gz
 tar -xzf utool.tar.gz && mv server-setup-$UTOOL_VERSION/* . && rm utool.tar.gz && rm -rf server-setup-$UTOOL_VERSION
+
+# Make CLI alias
 EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
 grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
-sleep 1 && echo "$EXEC_PATH" | sudo tee -a ~/.bashrc
+sleep 1
+echo "$EXEC_PATH" | sudo tee -a ~/.bashrc
 cd && rm install_utool && sleep 1
 source ~/.bashrc
