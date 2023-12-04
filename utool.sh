@@ -4,17 +4,16 @@ MENU="
   ==========================================
                   MENU
   ==========================================
-  1. Install dependencies for compiling Ruby
-  2. Install lib support image processing
+  1. Install dependencies for compiling Ruby           50. WSLSmartGit UI
+  2. Install lib support image processing              51. Install docker
   3. Install Redis and sidekiq 7
   4. Tạo deploy user
   5. Install Database PostgreSQL 15/ MySQL 8
   6. Install Rails
   7. Add Domain (Nginx/Host)
   8. Setup capitrano deploy
-  9. Install docker
-  10. WSLSmartGit UI ()
-  100. Install docker
+
+  100. Remove UTool
   Exit (q/quit/exit)
   Select one number: "
 
@@ -23,7 +22,7 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 while true; do
   echo "$MENU"
-  read -p "=> Nhập lựa chọn: " INPUT
+  read -p "=> Select one: " INPUT
   echo "=================== START ===================="
   case "$INPUT" in
     1)
@@ -54,7 +53,7 @@ while true; do
 
   echo "=================== END ===================="
   echo ""
-  read -p "=> Nhập bất kỳ để tiếp tục hoặc q để kết thúc: " NEW_INPUT
+  read -p "=> Enter any to continue or q to end: " NEW_INPUT
 
   if [ "$NEW_INPUT" == "q" ]; then
     break

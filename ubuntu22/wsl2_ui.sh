@@ -12,13 +12,14 @@ if [ "$OPTION" -eq 1 ]; then
   sudo apt update && sudo apt full-upgrade -y
   sudo apt install gedit libgtk-3-0 -y
 
+  mkdir -p $HOME/.utool/resources
   cd $HOME/.utool/resources
   curl -L -o $SMARTGIT_2026_FILE https://www.syntevo.com/downloads/smartgit/archive/$SMARTGIT_2026_FILE
 
   tar -xvzf $SMARTGIT_2026_FILE
   rm -rf $SMARTGIT_2026_FILE
 
-  EXEC_BASH="alias $SMARTGIT_ALIAS='nohup $HOME/.utool/resources/run_smartgit &'"
+  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.utool/resources/smartgit/bin && source smartgit.sh'"
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc
