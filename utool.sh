@@ -15,6 +15,7 @@ MENU="
 
   100. Remove UTool
   Exit (q/quit/exit)
+
   Select one number: "
 
 SCRIPT_PATH="$(realpath "$BASH_SOURCE")"
@@ -42,9 +43,9 @@ while true; do
     9)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     50)
-      sh $SCRIPT_DIR/ubuntu22/wsl2/wsl2_smartgit.sh;;
+      sh $SCRIPT_DIR/wsl2/wsl2_smartgit.sh;;
     50)
-      sh $SCRIPT_DIR/ubuntu22/wsl2/wsl2_add_alias.sh;;
+      sh $SCRIPT_DIR/wsl2/wsl2_add_alias.sh;;
     100)
       bash $SCRIPT_DIR/uninstall_utool;;
     q|0|quit|exit)
