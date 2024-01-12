@@ -4,9 +4,9 @@ MENU="
   ==========================================
                   MENU
   ==========================================
-  1. Install dependencies for compiling Ruby           50. WSLSmartGit UI
-  2. Install lib support image processing              51. Install docker
-  3. Install Redis and sidekiq 7
+  1. Install dependencies for compiling Ruby            50. WSLSmartGit UI
+  2. Install lib support image processing               51. WSL2 add some alias by IDE
+  3. Install Redis and sidekiq 7                        52. Install docker
   4. Tạo deploy user
   5. Install Database PostgreSQL 15/ MySQL 8
   6. Install Rails
@@ -41,8 +41,10 @@ while true; do
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     9)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
-    10)
-      sh $SCRIPT_DIR/ubuntu22/wsl2_ui.sh;;
+    50)
+      sh $SCRIPT_DIR/ubuntu22/wsl2/wsl2_smartgit.sh;;
+    50)
+      sh $SCRIPT_DIR/ubuntu22/wsl2/wsl2_add_alias.sh;;
     100)
       bash $SCRIPT_DIR/uninstall_utool;;
     q|0|quit|exit)
@@ -59,6 +61,3 @@ while true; do
     break
   fi
 done
-
-
-
