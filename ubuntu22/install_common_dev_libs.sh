@@ -22,6 +22,16 @@ if [ "$option" == "y" ]; then
   sudo systemctl enable nginx
 fi
 
+echo "=== Install wkhtmltopdf ==="
+read -p "=> Do you want to install wkhtmltopdf? Yes(y): " option
+if [ "$option" == "y" ]; then
+  sudo apt install wkhtmltopdf -y
+  # Itel: https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_arm64.deb
+  # AMD: https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-2/wkhtmltox_0.12.6.1-2.jammy_amd64.deb
+
+  dpkg -x wkhtmltox_0.12.6.1-2.jammy_arm64.deb .
+fi
+
 echo "=== Install Redis ==="
 read -p "=> Do you want to install Redis? Yes(y): " option
 if [ "$option" == "y" ]; then

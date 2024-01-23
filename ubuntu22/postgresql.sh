@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 echo "1) Install PostgreSQL 16 "
 echo "1) Install Mariadb "
 read -p "=> Choose database (PostgreSQL enter 1/ MySQL enter 2): " db_type
