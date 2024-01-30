@@ -12,6 +12,7 @@ MENU="
   6. Setup Database PostgreSQL 15
   7. Install Rails
   8. Add Domain (Nginx/Host)
+  9. Add Logrotate
   12. Setup capitrano deploy
 
   100. Remove UTool
@@ -43,6 +44,8 @@ while true; do
       sh $SCRIPT_DIR/ubuntu22/rails_setup.sh;;
     8)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
+    9)
+      sh $SCRIPT_DIR/ubuntu22/logrotate.sh;;
     50)
       sh $SCRIPT_DIR/wsl2/wsl2_smartgit.sh;;
     51)
