@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "Smartgit Version 20.2.6"
+echo "Smartgit Version 22_1_8"
 RESOURCE_PATH="$HOME/.utool/resources"
-SMARTGIT_2026_FILE="smartgit-linux-20_2_6.tar.gz"
+SMARTGIT_VERSION="smartgit-linux-22_1_8.tar.gz"
 
 read -p "=> Smartgit setup (Install enter 1/ Reset enter 2): " OPTION
 read -p "=> Alias to run SmartGit (default smg): " SMARTGIT_ALIAS
@@ -12,13 +12,15 @@ if [ "$OPTION" -eq 1 ]; then
   sudo apt update && sudo apt full-upgrade -y
   sudo apt install gedit libgtk-3-0 -y
 
+  rm -rf smartgit
+
   cd $HOME/.utool/resources
-  curl -L -o $SMARTGIT_2026_FILE https://www.syntevo.com/downloads/smartgit/archive/$SMARTGIT_2026_FILE
+  curl -L -o $SMARTGIT_VERSION https://www.syntevo.com/downloads/smartgit/archive/$SMARTGIT_VERSION
 
-  tar -xvzf $SMARTGIT_2026_FILE
-  rm -rf $SMARTGIT_2026_FILE
+  tar -xvzf $SMARTGIT_VERSION
+  rm -rf $SMARTGIT_VERSION
 
-  EXEC_BASH="alias $SMARTGIT_ALIAS='nohup $HOME/.utool/resources/run_smartgit &'"
+  EXEC_BASH="alias $SMARTGIT_ALIAS='source $HOME/.utool/resources/smartgit/bin/smartgit.sh'"
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc

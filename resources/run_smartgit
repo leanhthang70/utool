@@ -1,6 +1,0 @@
-#!/bin/bash
-
-CURRENT_PATH=$PWD
-cd $HOME/.utool/resources/smartgit/bin
-source smartgit.sh
-cd $CURRENT_PATH
