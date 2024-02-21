@@ -1,14 +1,11 @@
 #!/bin/bash
 
-# Get UTool version (0.0.6)
-UTOOL_VERSION="$1"
-
 # Pull script install
-cd && rm -rf .utool && mkdir -p .utool && cd .utool
+cd && rm -rf .utool
 
 git clone https://github.com/leanhthang/server-setup.git
 
-mv server-setup .utool
+mv server-setup .utool  && cd .utool
 
 # Make CLI alias
 EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
