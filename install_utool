@@ -8,7 +8,7 @@ cd && rm -rf .utool && mkdir -p .utool && cd .utool
 
 git clone https://github.com/leanhthang/server-setup.git
 
-mv -rf server-setup .utool
+mv server-setup .utool
 
 # Make CLI alias
 EXEC_PATH="alias utool='source $HOME/.utool/utool.sh'"
