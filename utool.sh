@@ -1,5 +1,15 @@
 #!/bin/bash
 
+UTOOL_OPTION="$1"
+SCRIPT_PATH="$(realpath "$BASH_SOURCE")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+
+if [ "$UTOOL_OPTION" == 'update' ]; then
+  echo "Please provide UTool version"
+  cd $SCRIPT_DIR/.. && git pull && cd $SCRIPT_DIR
+  exit 1
+fi
+
 MENU="
   ==========================================
                   MENU
@@ -19,9 +29,6 @@ MENU="
   Exit (q|quit|exit|0)
 
   Select one number: "
-
-SCRIPT_PATH="$(realpath "$BASH_SOURCE")"
-SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 while true; do
   echo "$MENU"

@@ -11,6 +11,8 @@ SMARTGIT_ALIAS=${SMARTGIT_ALIAS:-smg}
 if [ "$OPTION" -eq 1 ]; then
   sudo apt update && sudo apt full-upgrade -y
   sudo apt install gedit libgtk-3-0 -y
+  sudo apt install default-jre -y
+  sudo apt install default-jdk -y
 
   rm -rf smartgit
 
