@@ -7,4 +7,5 @@ if [ "$option" == "y" ]; then
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   source ~/.bashrc
+  echo "Remove UTool success !"
 fi

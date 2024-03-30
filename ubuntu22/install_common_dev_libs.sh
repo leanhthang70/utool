@@ -3,8 +3,7 @@
 echo "=== Install dependencies for compiling Ruby ==="
 
 sudo apt-get update
-sudo apt-get install git-core zlib1g-dev build-essential libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev -y
-
+sudo apt-get install git-core curl zlib1g-dev build-essential autoconf bison libssl-dev libreadline-dev libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev -y
 echo "=== Install Node JS ==="
 read -p "=> Do you want to install NodeJS? Yes(y): " option
 if [ "$option" == "y" ]; then
@@ -45,13 +44,6 @@ read -p "=> Do you want to install Let's Encrypt SSL? Yes(y): " option
 if [ "$option" == "y" ]; then
   sudo apt update && sudo apt upgrade
   sudo apt install certbot -y
-fi
-
-echo "=== Install wkhtmltopdf ==="
-read -p "=> Do you want to install wkhtmltopdf? Yes(y): " option
-if [ "$option" == "y" ]; then
-  sudo wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb
-  sudo dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd64.deb
 fi
 
 echo "==================== END ===================="

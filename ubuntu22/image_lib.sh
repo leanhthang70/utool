@@ -18,6 +18,10 @@ sudo cmake -G "Unix Makefiles" ../
 sudo make install
 
 # ImageMagick
-sudo apt install imagemagick -y
+echo "=== Install ImageMagick ==="
+read -p "=> Do you want to install ImageMagick? Yes(y): " option
+if [ "$option" == "y" ]; then
+  sudo apt install imagemagick -y
 
-sudo apt install ffmpeg -y
+  sudo apt install ffmpeg -y
+fi

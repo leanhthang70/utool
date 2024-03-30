@@ -2,7 +2,7 @@
 
 echo "Smartgit Version 22_1_8"
 RESOURCE_PATH="$HOME/.utool/resources"
-SMARTGIT_VERSION="smartgit-linux-22_1_8.tar.gz"
+SMARTGIT_VERSION="smartgit-linux-20.2.6.tar.gz"
 
 read -p "=> Smartgit setup (Install enter 1/ Reset enter 2): " OPTION
 read -p "=> Alias to run SmartGit (default smg): " SMARTGIT_ALIAS

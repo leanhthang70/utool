@@ -14,3 +14,7 @@ sleep 1
 echo "$EXEC_PATH" | sudo tee -a ~/.bashrc
 cd && rm install_utool && sleep 1
 source ~/.bashrc
+
+echo ""
+echo "Install UTool success !"
+echo "======================= DONE ======================="
