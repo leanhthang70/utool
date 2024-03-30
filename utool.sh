@@ -16,7 +16,7 @@ MENU="
   12. Setup capitrano deploy
 
   100. Remove UTool
-  Exit (q/quit/exit)
+  Exit (q|quit|exit|0)
 
   Select one number: "
 
@@ -52,17 +52,9 @@ while true; do
       sh $SCRIPT_DIR/wsl2/wsl2_add_alias.sh;;
     100)
       bash $SCRIPT_DIR/uninstall_utool;;
-    q|0|quit|exit)
-      if [ "$INPUT" == "q" ] ]; then
-        break
-      fi;;
   esac
 
-  echo "=================== END ===================="
-  echo ""
-  read -p "=> Enter any to continue or q to end: " NEW_INPUT
-
-  if [ "$NEW_INPUT" == "q" ]; then
+  if [ "$INPUT" = "q" ] || [ "$INPUT" = "0" ] || [ "$INPUT" = "quit" ] || [ "$OPTION" = "exit" ]; then
     break
   fi
 done
