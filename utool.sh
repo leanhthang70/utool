@@ -6,7 +6,9 @@ SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 
 if [ "$UTOOL_OPTION" == 'update' ]; then
   echo "Please provide UTool version"
-  cd $SCRIPT_DIR/.. && git pull && cd $SCRIPT_DIR
+  echo $SCRIPT_DIR
+  echo "Please provide UTool version"
+  cd $SCRIPT_DIR && git pull && cd $SCRIPT_DIR
   exit 1
 fi
 
@@ -17,12 +19,13 @@ MENU="
   1. Install dependencies for compiling Ruby            50. WSLSmartGit UI
   2. Install lib support image processing               51. WSL2 add some alias by IDE
   3. Install Redis and sidekiq 7                        52. Install docker
-  4. Tạo deploy user
+  4. Tạo deploy user                                    53. Add
   5. Setup Database MySQL 8
   6. Setup Database PostgreSQL 15
   7. Install Rails
   8. Add Domain (Nginx/Host)
-  9. Add Logrotate
+  9. Add SSL for Nginx
+  10. Add Logrotate
   12. Setup capitrano deploy
 
   100. Remove UTool
@@ -51,7 +54,7 @@ while true; do
       sh $SCRIPT_DIR/ubuntu22/rails_setup.sh;;
     8)
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
-    9)
+    10)
       sh $SCRIPT_DIR/ubuntu22/logrotate.sh;;
     50)
       sh $SCRIPT_DIR/wsl2/wsl2_smartgit.sh;;
