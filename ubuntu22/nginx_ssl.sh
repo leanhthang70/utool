@@ -1,22 +1,39 @@
 #!/bin/bash
 
 read -p "=> Nhập domain_name: " domain
-read -p "=> Nhập domain_name: " email
+read -p "=> Nhập email: " email
 nginx_file="$domain.conf"
 
 # Open port
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw reload
+# sudo ufw enable
+# sudo ufw allow 80/tcp
+# sudo ufw allow 443/tcp
+# sudo ufw reload
+
+echo "=== Install Nginx ==="
+if ! command -v nginx &> /dev/null; then
+  sudo apt-get install -y nginx
+  sudo systemctl start nginx
+  sudo systemctl enable nginx
+fi
+
+# Install Certbot if not already installed
+if ! command -v certbot &> /dev/null; then
+  sudo apt remove certbot
+  sudo snap install core; sudo snap refresh core
+  sudo snap install --classic certbot
+  sudo ln -s /snap/bin/certbot /usr/bin/certbot
+fi
+
 # Add SSL
-sudo certbot --nginx --agree-tos --email $email -d $domain -d www.$domain
+sudo certbot --nginx --email $email -d $domain -d www.$domain
 
 # Renew certbot
 # service nginx stop && certbot renew && service nginx start
 
 
 # Add Nginx domain
-cat > /etc/nginx/sites-available/$nginx_file << EOF
+cat > /etc/nginx/conf.d/$nginx_file << EOF
 server {
     if ($host = $domain) {
         return 301 https://$host$request_uri;

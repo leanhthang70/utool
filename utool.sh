@@ -19,12 +19,11 @@ MENU="
   1. Install dependencies for compiling Ruby            50. WSLSmartGit UI
   2. Install lib support image processing               51. WSL2 add some alias by IDE
   3. Install Redis and sidekiq 7                        52. Install docker
-  4. Tạo deploy user                                    53. Add asd
+  4. Tạo deploy user
   5. Setup Database MySQL 8
   6. Setup Database PostgreSQL 15
   7. Install Rails
   8. Add Domain (Nginx/Host)
-  9. Add SSL for Nginx
   10. Add Logrotate
   12. Setup capitrano deploy
 

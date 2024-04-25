@@ -13,13 +13,6 @@ if [ "$option" == "y" ]; then
   sudo apt-get install -y nodejs
 fi
 
-echo "=== Install Nginx ==="
-read -p "=> Do you want to install Nginx? Yes(y): " option
-if [ "$option" == "y" ]; then
-  sudo apt-get install -y nginx
-  sudo systemctl start nginx
-  sudo systemctl enable nginx
-fi
 
 echo "=== Install wkhtmltopdf ==="
 read -p "=> Do you want to install wkhtmltopdf? Yes(y): " option

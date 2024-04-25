@@ -14,7 +14,7 @@ source ~/.bashrc
 eval "$(/root/.rbenv/bin/rbenv init - bash)"
 type rbenv
 
-read -p "Enter the ruby version " ruby_version
+read -p "Enter the ruby version: " ruby_version
 echo ''
 echo "=== Install Jemalloc for compiling Ruby ==="
 # RUBY_CONFIGURE_OPTS=--with-jemalloc asdf install ruby $ruby_version
