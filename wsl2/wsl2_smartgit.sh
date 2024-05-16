@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Smartgit Version 22_1_8"
+echo "Smartgit Version 21_1_7"
 RESOURCE_PATH="$HOME/.utool/resources"
 SMARTGIT_VERSION="smartgit-linux-20.2.6.tar.gz"
 
