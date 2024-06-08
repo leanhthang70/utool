@@ -30,7 +30,7 @@ elif [ "$option" -eq 2 ]; then # Create DB
 
   # MySQL queries to create a new database, user, and grant privileges
   MYSQL_QUERY="CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
-  MYSQL_QUERY+="CREATE USER '${NEW_DB_USER}'@'localhost' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
+  MYSQL_QUERY+="CREATE USER IF NOT EXISTS '${NEW_DB_USER}'@'localhost' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
   MYSQL_QUERY+="GRANT ALL PRIVILEGES ON \`${NEW_DB_NAME}\`.* TO '${NEW_DB_USER}'@'localhost';"
   MYSQL_QUERY+="FLUSH PRIVILEGES;"
 
