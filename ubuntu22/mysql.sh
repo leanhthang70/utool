@@ -7,12 +7,15 @@ echo "6) Restore database "
 read -p "=> Choose one option: " option
 
 if [ "$option" -eq 1 ]; then
-  echo "=== Install Mariadb ==="
+  echo "=== Install 11.4.2-MariaDB ==="
+  curl -LsS https://downloads.mariadb.com/MariaDB/mariadb\_repo\_setup | bash -s -- --mariadb-server-version=11.4.2
   sudo apt update
   sudo apt-get install libmysqlclient-dev
-  sudo apt install mariadb-server
+  sudo apt install mariadb-server mariadb-client -y
   sudo mysql_secure_installation
   sudo systemctl status mariadb
+  sudo systemctl enable mariadb
+  sudo systemctl start mariadb
 elif [ "$option" -eq 2 ]; then # Create DB
   # Prompt the user for MySQL credentials
   read -p "Enter MySQL root username: " MYSQL_ROOT_USER

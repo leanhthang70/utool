@@ -20,7 +20,7 @@ MENU="
   2. Install lib support image processing               51. WSL2 add some alias by IDE
   3. Install Redis and sidekiq 7                        52. Install docker
   4. Tạo deploy user
-  5. Setup Database MySQL 8
+  5. Setup Database MySQL 8 / MariaDB 11.4.2
   6. Setup Database PostgreSQL 15
   7. Install Rails
   8. Add Domain (Nginx/Host)

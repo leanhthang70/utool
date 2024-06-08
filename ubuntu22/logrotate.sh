@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# FILEPATH: /home/lat/server-setup/ubuntu22/logrotate.sh
+# FILEPATH: /home/lat/utool/ubuntu22/logrotate.sh
 
 # Check if logrotate is installed
 if ! command -v logrotate &> /dev/null; then
