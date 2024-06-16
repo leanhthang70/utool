@@ -74,7 +74,6 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   read -p "Remote access type (1 => all; 2 => localhost; 3 => IP) : " REMOTE_ACCESS
   read -p "Enter new db username: " NEW_DB_USER
   read -p "Enter new db password: " NEW_DB_PASSWORD
-  read -p "Enter MySQL database name: " MYSQL_DATABASE
   read -p "Choose database to add user (leave empty to apply to all): " DB_NAME
 
   if [ "$REMOTE_ACCESS" -eq 1 ]; then
@@ -87,9 +86,9 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   fi
 
   if [ "$TYPE_USER" -eq 1 ]; then
-    PERMISSION="CREATE, SELECT, INSERT, UPDATE, DELETE PRIVILEGES"
+    PERMISSION="CREATE, SELECT, INSERT, UPDATE, DELETE"
   elif [ "$TYPE_USER" -eq 2 ]; then
-    PERMISSION="ALL PRIVILEGES"
+    PERMISSION="SELECT"
   elif [ "$TYPE_USER" -eq 3 ]; then
     PERMISSION="ALL PRIVILEGES"
   fi
@@ -102,15 +101,12 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   echo "=== Create new user ==="
 
   # Create a new user for the database
-  MYSQL_QUERY="CREATE USER IF NOT EXISTS '${NEW_DB_USER}'@'$HOST' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
+  MYSQL_QUERY="CREATE USER IF NOT EXISTS ${NEW_DB_USER}@'$HOST' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
   mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   echo "User $NEW_DB_USER created successfully."
 
   # Grant privileges to the new user on the new database
-  echo $PERMISSION
-  echo $NEW_DB_NAME
-  MYSQL_QUERY="GRANT $PERMISSION ON `${NEW_DB_NAME}`.* TO '${NEW_DB_USER}'@'$HOST';"
-  echo $MYSQL_QUERY
+  MYSQL_QUERY="GRANT $PERMISSION ON ${NEW_DB_NAME}.* TO '${NEW_DB_USER}'@'$HOST';"
   mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   MYSQL_QUERY="FLUSH PRIVILEGES;"
   mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
@@ -163,8 +159,8 @@ elif [ "$OPTION" -eq 5 ]; then # Backup DB
 elif [ "$OPTION" -eq 6 ]; then # Restore DB
   # Prompt the user for MySQL credentials
   echo "=== MySQL credentials can Restore DB ==="
-  read -p "Enter MySQL username: " MYSQL_USER
-  read -p "Enter MySQL password: " MYSQL_PASSWORD
+  read -p "Enter MySQL root username: " MYSQL_USER
+  read -p "Enter MySQL root password: " MYSQL_PASSWORD
   echo # Move to the next line after password input
 
   # Prompt the user for the current and new database names
