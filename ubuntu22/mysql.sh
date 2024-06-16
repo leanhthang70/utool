@@ -67,14 +67,14 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   echo "=== MySQL credentials can Create user =="
   read -p "Enter MySQL root username: " MYSQL_ROOT_USER
   read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
-  read -p "Enter MySQL database name: " MYSQL_DATABASE
 
   # Prompt the user for new user details
   echo "=== New user details ==="
   read -p "Type of new user (1 => base; 2 => readonly; 3 => full_permission): " TYPE_USER
   read -p "Remote access type (1 => all; 2 => localhost; 3 => IP) : " REMOTE_ACCESS
   read -p "Enter new db username: " NEW_DB_USER
-  read -p "Enter new db user password: " NEW_DB_PASSWORD
+  read -p "Enter new db password: " NEW_DB_PASSWORD
+  read -p "Enter MySQL database name: " MYSQL_DATABASE
   read -p "Choose database to add user (leave empty to apply to all): " DB_NAME
 
   if [ "$REMOTE_ACCESS" -eq 1 ]; then
@@ -82,7 +82,8 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   elif [ "$REMOTE_ACCESS" -eq 2 ]; then
     HOST="localhost"
   elif [ "$REMOTE_ACCESS" -eq 3 ]; then
-    HOST="$REMOTE_ACCESS"
+    read -p "Enter IP address: " REMOTE_IP
+    HOST="$REMOTE_IP"
   fi
 
   if [ "$TYPE_USER" -eq 1 ]; then
@@ -106,7 +107,10 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   echo "User $NEW_DB_USER created successfully."
 
   # Grant privileges to the new user on the new database
+  echo $PERMISSION
+  echo $NEW_DB_NAME
   MYSQL_QUERY="GRANT $PERMISSION ON `${NEW_DB_NAME}`.* TO '${NEW_DB_USER}'@'$HOST';"
+  echo $MYSQL_QUERY
   mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   MYSQL_QUERY="FLUSH PRIVILEGES;"
   mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
