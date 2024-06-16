@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Smartgit Version 20_1_6"
-RESOURCE_PATH="$HOME/.utool/resources"
+RESOURCE_PATH="$HOME/.smartgit"
 SMARTGIT_VERSION="smartgit-linux-20_1_6.tar.gz"
 
 read -p "=> Smartgit setup (Install enter 1/ Reset enter 2): " OPTION
@@ -22,7 +22,7 @@ if [ "$OPTION" -eq 1 ]; then
   tar -xvzf $SMARTGIT_VERSION
   rm -rf $SMARTGIT_VERSION
 
-  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.utool/resources/smartgit/bin/ && source smartgit.sh'"
+  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.smartgit/smartgit/bin/ && . smartgit.sh'"
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc

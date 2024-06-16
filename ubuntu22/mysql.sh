@@ -4,65 +4,127 @@ echo "3) Create user "
 echo "4) Change password "
 echo "5) Backup database "
 echo "6) Restore database "
-read -p "=> Choose one option: " option
+read -p "=> Choose one option: " OPTION
 
-if [ "$option" -eq 1 ]; then
+if [ "$OPTION" -eq 1 ]; then
   echo "=== Install 11.4.2-MariaDB ==="
   curl -LsS https://downloads.mariadb.com/MariaDB/mariadb\_repo\_setup | bash -s -- --mariadb-server-version=11.4.2
   sudo apt update
   sudo apt-get install libmysqlclient-dev
   sudo apt install mariadb-server mariadb-client -y
   sudo mysql_secure_installation
+
+  echo "=== Change Port ==="
+  read -p "7) Open connection via port (default 3306): " MYSQL_PORT
+  if [ -z "$MYSQL_PORT" ]; then
+    MYSQL_PORT=3306
+  fi
+  sed -i '/^\[client-server\]/a port = $MYSQL_PORT' /etc/mysql/my.cnf
+  # Allow remote access
+  sudo ufw enable
+  sudo ufw allow $MYSQL_PORT
+  sudo ufw status
+
+  # Kiểm tra xem đã có phần [mysqld] trong file hay chưa
+  echo "=== Config MariaDB ==="
+  if ! grep -q "^\[mysqld\]" /etc/mysql/my.cnf; then
+      echo "[mysqld]" | sudo tee -a /etc/mysql/my.cnf
+  fi
+  sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a max_connections = 500' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a interactive_timeout = 300' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a wait_timeout = 300' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a innodb_file_per_table = 1' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a query_cache_size = 256MB' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a innodb_log_file_size=512MB' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a innodb_log_buffer_size=128MB' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a innodb_strict_mode = ON' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a tmp_table_size=128MB' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a thread_cache_size=256' /etc/mysql/my.cnf
   sudo systemctl status mariadb
   sudo systemctl enable mariadb
   sudo systemctl start mariadb
-elif [ "$option" -eq 2 ]; then # Create DB
+
+elif [ "$OPTION" -eq 2 ]; then # Create DB
+  echo "=== Create new database ==="
   # Prompt the user for MySQL credentials
-  read -p "Enter MySQL root username: " MYSQL_ROOT_USER
+  read -p "Enter MySQL root username (root): " MYSQL_ROOT_USER
   read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
   echo # Move to the next line after password input
 
   # Prompt the user for new database and user details
   read -p "Enter new database name: " NEW_DB_NAME
+  read -p "Quyền truy cập từ xa (true/ false -> localhost/ IP) : " REMOTE_ACCESS
   read -p "Enter new username for the database: " NEW_DB_USER
   read -p "Enter password for the new user: " NEW_DB_PASSWORD
   echo # Move to the next line after password input
 
-  # MySQL queries to create a new database, user, and grant privileges
-  MYSQL_QUERY="CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
-  MYSQL_QUERY+="CREATE USER IF NOT EXISTS '${NEW_DB_USER}'@'localhost' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
-  MYSQL_QUERY+="GRANT ALL PRIVILEGES ON \`${NEW_DB_NAME}\`.* TO '${NEW_DB_USER}'@'localhost';"
-  MYSQL_QUERY+="FLUSH PRIVILEGES;"
-
-  # Execute the MySQL queries
-  mysql -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
-
-  # Check for errors
-  if [ $? -eq 0 ]; then
-      echo "Database and user created successfully."
+  if [ "$REMOTE_ACCESS" == "true" ]; then
+    HOST="%"
+  elif [ "$REMOTE_ACCESS" == "false" ]; then
+    HOST="localhost"
   else
-      echo "Error: Failed to create database and user."
+    HOST="$REMOTE_ACCESS"
   fi
-elif [ "$option" -eq 3 ]; then # Create user
+
+  # MySQL queries to create a new database, user, and grant privileges
+  MYSQL_QUERY="CREATE DATABASE IF NOT EXISTS ${NEW_DB_NAME};"
+  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  echo "Database created successfully."
+
+elif [ "$OPTION" -eq 3 ]; then # Create user
+  echo "=== Create new user ==="
   # Prompt the user for MySQL credentials
+  echo "=== MySQL credentials =="
   read -p "Enter MySQL username: " MYSQL_USER
   read -p "Enter MySQL password: " MYSQL_PASSWORD
-  echo # Move to the next line after password input
   read -p "Enter MySQL database name: " MYSQL_DATABASE
 
   # Prompt the user for new user details
+  echo "=== New user details ==="
+  read -p "Type of new user (1 => base; 2 => readonly; 3 => full_permission): " TYPE_USER
+  read -p "Remote access type (1 => all; 2 => localhost; 3 => IP) : " REMOTE_ACCESS
   read -p "Enter new username: " NEW_USERNAME
   read -p "Enter new user password: " NEW_USER_PASSWORD
-  echo # Move to the next line after password input
+  read -p "Choose database to add user (empty will apply all): " DB_NAME
+  read -p "Choose database to add user (leave empty to apply to all): " DB_NAME
 
-  # MySQL query to create a new user
-  MYSQL_QUERY="CREATE USER '${NEW_USERNAME}'@'localhost' IDENTIFIED BY '${NEW_USER_PASSWORD}';"
-  MYSQL_QUERY+="GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${NEW_USERNAME}'@'localhost';"
-  MYSQL_QUERY+="FLUSH PRIVILEGES;"
+  if [ "$REMOTE_ACCESS" -eq 1 ]; then
+    HOST="%"
+  elif [ "$REMOTE_ACCESS" -eq 2 ]; then
+    HOST="localhost"
+  elif [ "$REMOTE_ACCESS" -eq 3 ]; then
+    HOST="$REMOTE_ACCESS"
+  fi
 
-  # Execute the MySQL query
-  mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e"${MYSQL_QUERY}"
-elif [ "$option" -eq 4 ]; then # Change password
+  if [ "$TYPE_USER" -eq 1 ]; then
+    PERMISSION="CREATE, SELECT, INSERT, UPDATE, DELETE PRIVILEGES"
+  elif [ "$TYPE_USER" -eq 2 ]; then
+    PERMISSION="ALL PRIVILEGES"
+  elif [ "$TYPE_USER" -eq 3 ]; then
+    PERMISSION="ALL PRIVILEGES"
+  fi
+
+  if [ -z "$DB_NAME" ]; then
+    NEW_DB_NAME="*"
+  else
+    NEW_DB_NAME=$DB_NAME
+  fi
+  echo "=== Create new user ==="
+
+  # Create a new user for the database
+  MYSQL_QUERY="CREATE USER IF NOT EXISTS '${NEW_DB_USER}'@'$HOST' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
+  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  echo "User $NEW_DB_USER created successfully."
+
+  # Grant privileges to the new user on the new database
+  MYSQL_QUERY="GRANT $PERMISSION ON `${NEW_DB_NAME}`.* TO '${NEW_DB_USER}'@'$HOST';"
+  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  MYSQL_QUERY="FLUSH PRIVILEGES;"
+  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  echo "Privileges granted successfully."
+
+elif [ "$OPTION" -eq 4 ]; then # Change password
   # Prompt the user for MySQL credentials
   read -p "Enter MySQL username: " MYSQL_USER
   read -p "Enter MySQL current password: " MYSQL_CURRENT_PASSWORD
@@ -86,7 +148,8 @@ elif [ "$option" -eq 4 ]; then # Change password
   else
       echo "Error: Failed to change password for user ${MYSQL_USER}."
   fi
-elif [ "$option" -eq 5 ]; then # Backup DB
+elif [ "$OPTION" -eq 5 ]; then # Backup DB
+  echo "=== Backup database ==="
   # Prompt the user for MySQL credentials
   read -p "Enter MySQL username: " MYSQL_USER
   read -p "Enter MySQL password: " MYSQL_PASSWORD
@@ -105,8 +168,9 @@ elif [ "$option" -eq 5 ]; then # Backup DB
   else
       echo "Error: Backup failed."
   fi
-elif [ "$option" -eq 6 ]; then # Restore DB
+elif [ "$OPTION" -eq 6 ]; then # Restore DB
   # Prompt the user for MySQL credentials
+  echo "=== MySQL credentials can Restore DB ==="
   read -p "Enter MySQL username: " MYSQL_USER
   read -p "Enter MySQL password: " MYSQL_PASSWORD
   echo # Move to the next line after password input
@@ -119,7 +183,9 @@ elif [ "$option" -eq 6 ]; then # Restore DB
   read -p "Enter SQL dump file name (e.g., backup.sql): " DUMP_FILE
 
   # Use sed to replace the old database name with the new one
-  sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
+  if [ "$CURRENT_DB_NAME" != "$NEW_DB_NAME" ]; then
+      sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
+  fi
 
   # Restore the modified SQL dump file
   mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
@@ -132,5 +198,5 @@ elif [ "$option" -eq 6 ]; then # Restore DB
       echo "Error: Database restoration failed."
   fi
 else
-  echo "Wrong input option (only 1 or 2) ! "
+  echo "Wrong input option (from 1 to 6) ! "
 fi
