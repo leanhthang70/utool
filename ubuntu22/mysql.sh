@@ -19,11 +19,12 @@ if [ "$OPTION" -eq 1 ]; then
   if [ -z "$MYSQL_PORT" ]; then
     MYSQL_PORT=3306
   fi
-  sed -i '/^\[client-server\]/a port = $MYSQL_PORT' /etc/mysql/my.cnf
+  sed -i "/^\[client-server\]/a port = $MYSQL_PORT" /etc/mysql/my.cnf
   # Allow remote access
-  sudo ufw enable
-  sudo ufw allow $MYSQL_PORT
-  sudo ufw status
+  # sudo ufw enable
+  # sudo ufw allow 22
+  # sudo ufw allow $MYSQL_PORT
+  # sudo ufw status
 
   # Kiểm tra xem đã có phần [mysqld] trong file hay chưa
   echo "=== Config MariaDB ==="
@@ -41,9 +42,9 @@ if [ "$OPTION" -eq 1 ]; then
   sed -i '/^\[mysqld\]/a innodb_strict_mode = ON' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a tmp_table_size=128MB' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a thread_cache_size=256' /etc/mysql/my.cnf
-  sudo systemctl status mariadb
   sudo systemctl enable mariadb
   sudo systemctl start mariadb
+  sudo systemctl status mariadb
 
 elif [ "$OPTION" -eq 2 ]; then # Create DB
   echo "=== Create new database ==="
@@ -54,18 +55,6 @@ elif [ "$OPTION" -eq 2 ]; then # Create DB
 
   # Prompt the user for new database and user details
   read -p "Enter new database name: " NEW_DB_NAME
-  read -p "Quyền truy cập từ xa (true/ false -> localhost/ IP) : " REMOTE_ACCESS
-  read -p "Enter new username for the database: " NEW_DB_USER
-  read -p "Enter password for the new user: " NEW_DB_PASSWORD
-  echo # Move to the next line after password input
-
-  if [ "$REMOTE_ACCESS" == "true" ]; then
-    HOST="%"
-  elif [ "$REMOTE_ACCESS" == "false" ]; then
-    HOST="localhost"
-  else
-    HOST="$REMOTE_ACCESS"
-  fi
 
   # MySQL queries to create a new database, user, and grant privileges
   MYSQL_QUERY="CREATE DATABASE IF NOT EXISTS ${NEW_DB_NAME};"
@@ -75,18 +64,17 @@ elif [ "$OPTION" -eq 2 ]; then # Create DB
 elif [ "$OPTION" -eq 3 ]; then # Create user
   echo "=== Create new user ==="
   # Prompt the user for MySQL credentials
-  echo "=== MySQL credentials =="
-  read -p "Enter MySQL username: " MYSQL_USER
-  read -p "Enter MySQL password: " MYSQL_PASSWORD
+  echo "=== MySQL credentials can Create user =="
+  read -p "Enter MySQL root username: " MYSQL_ROOT_USER
+  read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
   read -p "Enter MySQL database name: " MYSQL_DATABASE
 
   # Prompt the user for new user details
   echo "=== New user details ==="
   read -p "Type of new user (1 => base; 2 => readonly; 3 => full_permission): " TYPE_USER
   read -p "Remote access type (1 => all; 2 => localhost; 3 => IP) : " REMOTE_ACCESS
-  read -p "Enter new username: " NEW_USERNAME
-  read -p "Enter new user password: " NEW_USER_PASSWORD
-  read -p "Choose database to add user (empty will apply all): " DB_NAME
+  read -p "Enter new db username: " NEW_DB_USER
+  read -p "Enter new db user password: " NEW_DB_PASSWORD
   read -p "Choose database to add user (leave empty to apply to all): " DB_NAME
 
   if [ "$REMOTE_ACCESS" -eq 1 ]; then
