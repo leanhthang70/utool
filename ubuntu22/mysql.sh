@@ -31,6 +31,9 @@ if [ "$OPTION" -eq 1 ]; then
   if ! grep -q "^\[mysqld\]" /etc/mysql/my.cnf; then
       echo "[mysqld]" | sudo tee -a /etc/mysql/my.cnf
   fi
+  read -p "=> Size of RAM: " RAM_SIZE
+  BUFFER_POOL_SIZE=$(echo "$RAM_SIZE * 0.5" | bc)
+  sed -i "/^\[mysqld\]/a innodb_buffer_pool_size=${BUFFER_POOL_SIZE}G" /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a max_connections = 500' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a interactive_timeout = 300' /etc/mysql/my.cnf
@@ -42,6 +45,10 @@ if [ "$OPTION" -eq 1 ]; then
   sed -i '/^\[mysqld\]/a innodb_strict_mode = ON' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a tmp_table_size=128MB' /etc/mysql/my.cnf
   sed -i '/^\[mysqld\]/a thread_cache_size=256' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a innodb_lock_wait_timeout=120' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a character-set-server=utf8mb4' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a character_set_client=utf8mb4' /etc/mysql/my.cnf
+  sed -i '/^\[mysqld\]/a collation-server=utf8mb4_general_ci' /etc/mysql/my.cnf
   sudo systemctl enable mariadb
   sudo systemctl start mariadb
   sudo systemctl status mariadb
@@ -49,8 +56,8 @@ if [ "$OPTION" -eq 1 ]; then
 elif [ "$OPTION" -eq 2 ]; then # Create DB
   echo "=== Create new database ==="
   # Prompt the user for MySQL credentials
-  read -p "Enter MySQL root username (root): " MYSQL_ROOT_USER
-  read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
+  read -p "Enter MySQL root username (root): " ROOT_USER
+  read -p "Enter MySQL root password: " ROOT_PASSWORD
   echo # Move to the next line after password input
 
   # Prompt the user for new database and user details
@@ -58,15 +65,15 @@ elif [ "$OPTION" -eq 2 ]; then # Create DB
 
   # MySQL queries to create a new database, user, and grant privileges
   MYSQL_QUERY="CREATE DATABASE IF NOT EXISTS ${NEW_DB_NAME};"
-  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   echo "Database created successfully."
 
 elif [ "$OPTION" -eq 3 ]; then # Create user
   echo "=== Create new user ==="
   # Prompt the user for MySQL credentials
   echo "=== MySQL credentials can Create user =="
-  read -p "Enter MySQL root username: " MYSQL_ROOT_USER
-  read -p "Enter MySQL root password: " MYSQL_ROOT_PASSWORD
+  ROOT_USER="root"
+  read -p "Enter MySQL root password: " ROOT_PASSWORD
 
   # Prompt the user for new user details
   echo "=== New user details ==="
@@ -102,14 +109,14 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
 
   # Create a new user for the database
   MYSQL_QUERY="CREATE USER IF NOT EXISTS ${NEW_DB_USER}@'$HOST' IDENTIFIED BY '${NEW_DB_PASSWORD}';"
-  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   echo "User $NEW_DB_USER created successfully."
 
   # Grant privileges to the new user on the new database
   MYSQL_QUERY="GRANT $PERMISSION ON ${NEW_DB_NAME}.* TO '${NEW_DB_USER}'@'$HOST';"
-  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   MYSQL_QUERY="FLUSH PRIVILEGES;"
-  mariadb -u"${MYSQL_ROOT_USER}" -p"${MYSQL_ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
+  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e"${MYSQL_QUERY}"
   echo "Privileges granted successfully."
 
 elif [ "$OPTION" -eq 4 ]; then # Change password
@@ -139,16 +146,16 @@ elif [ "$OPTION" -eq 4 ]; then # Change password
 elif [ "$OPTION" -eq 5 ]; then # Backup DB
   echo "=== Backup database ==="
   # Prompt the user for MySQL credentials
-  read -p "Enter MySQL username: " MYSQL_USER
-  read -p "Enter MySQL password: " MYSQL_PASSWORD
+  ROOT_USER="root"
+  read -p "Enter MySQL root password: " ROOT_PASSWORD
   echo # Move to the next line after password input
   read -p "Enter MySQL database name: " MYSQL_DATABASE
 
   # Prompt the user for the backup file name
-  read -p "Enter backup file name (e.g., backup.sql): " BACKUP_FILE
+  read -p "Enter backup file name / path (e.g., backup.sql): " BACKUP_FILE
 
   # mysqldump command to create a backup
-  mysqldump -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" > "${BACKUP_FILE}"
+  mysqldump -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${MYSQL_DATABASE}" > "${BACKUP_FILE}"
 
   # Check for errors
   if [ $? -eq 0 ]; then
@@ -159,8 +166,8 @@ elif [ "$OPTION" -eq 5 ]; then # Backup DB
 elif [ "$OPTION" -eq 6 ]; then # Restore DB
   # Prompt the user for MySQL credentials
   echo "=== MySQL credentials can Restore DB ==="
-  read -p "Enter MySQL root username: " MYSQL_USER
-  read -p "Enter MySQL root password: " MYSQL_PASSWORD
+  ROOT_USER="root"
+  read -p "Enter MySQL root password: " ROOT_PASSWORD
   echo # Move to the next line after password input
 
   # Prompt the user for the current and new database names
@@ -172,12 +179,13 @@ elif [ "$OPTION" -eq 6 ]; then # Restore DB
 
   # Use sed to replace the old database name with the new one
   if [ "$CURRENT_DB_NAME" != "$NEW_DB_NAME" ]; then
-      sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
+    sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
   fi
 
   # Restore the modified SQL dump file
-  mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
-  mysql --verbose -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
+  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
+  # mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
+  mysql --verbose -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
 
   # Check for errors
   if [ $? -eq 0 ]; then
