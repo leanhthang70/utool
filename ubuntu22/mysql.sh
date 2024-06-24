@@ -4,6 +4,8 @@ echo "3) Create user "
 echo "4) Change password "
 echo "5) Backup database "
 echo "6) Restore database "
+echo "7) Setup replica DB (MASTER)"
+echo "8) Setup replica DB (SLAVE)"
 read -p "=> Choose one option: " OPTION
 
 if [ "$OPTION" -eq 1 ]; then
@@ -192,6 +194,8 @@ elif [ "$OPTION" -eq 6 ]; then # Restore DB
   else
       echo "Error: Database restoration failed."
   fi
+elif [ "$OPTION" -eq 7 ]; then # Setup replica MASTER Server
+
 else
   echo "Wrong input option (from 1 to 6) ! "
 fi

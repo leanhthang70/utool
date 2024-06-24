@@ -24,6 +24,7 @@ MENU="
   7. Install Rails
   8. Add Domain (Nginx/Host)
   10. Add Logrotate
+  11. SSH keygen
   12. Setup capitrano deploy
 
   100. Remove UTool
@@ -54,6 +55,8 @@ while true; do
       sh $SCRIPT_DIR/ubuntu22/nginx_ssl.sh;;
     10)
       sh $SCRIPT_DIR/ubuntu22/logrotate.sh;;
+    11)
+      sh $SCRIPT_DIR/commons/sshs.sh;;
     50)
       sh $SCRIPT_DIR/wsl2/wsl2_smartgit.sh;;
     51)
@@ -62,7 +65,7 @@ while true; do
       bash $SCRIPT_DIR/uninstall_utool;;
   esac
 
-  if [ "$INPUT" = "q" ] || [ "$INPUT" = "0" ] || [ "$INPUT" = "quit" ] || [ "$OPTION" = "exit" ]; then
+  if [ "$INPUT" = "q" ] || [ "$INPUT" = "0" ] || [ "$INPUT" = "quit" ] || [ "$INPUT" = "exit" ]; then
     break
   fi
 done
