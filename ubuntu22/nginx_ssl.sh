@@ -2,7 +2,7 @@
 
 read -p "=> Nhập user deploy: " USER_DEPLOY
 read -p "=> Nhập domain_name: " DOMAIN
-read -p "=> Nhập email: " email
+read -p "=> Nhập email: " EMAIL
 nginx_file="$DOMAIN.conf"
 
 # Open port
@@ -36,31 +36,17 @@ sudo certbot --nginx --email $EMAIL -d $DOMAIN -d www.$DOMAIN
 # Add Nginx domain
 sudo cat > /etc/nginx/conf.d/$nginx_file << EOF
 server {
-    if ($host = $DOMAIN) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-  server_name $DOMAIN;
-  return 301 https://$host$request_uri;
-}
-
-server {
   listen 443 ssl;
   server_name $DOMAIN;
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
+  ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
   ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
   ssl_prefer_server_ciphers on;
   ssl_ciphers AES256+EECDH:AES256+EDH:!aNULL;
 
   root /home/$USER_DEPLOY/$DOMAIN/current/public;
   index index.html index.htm;
-
-  location / {
-    passenger_enabled on;
-    passenger_app_env production;
-  }
 
   client_max_body_size 12M;
 
@@ -80,6 +66,6 @@ server {
 }
 EOF
 
-sudo ln -s /etc/nginx/sites-available/$nginx_file /etc/nginx/sites-enabled/
+# sudo ln -s /etc/nginx/sites-available/$nginx_file /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo service nginx reload
