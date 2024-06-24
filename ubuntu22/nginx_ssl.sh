@@ -1,8 +1,9 @@
 #!/bin/bash
 
-read -p "=> Nhập domain_name: " domain
+read -p "=> Nhập user deploy: " USER_DEPLOY
+read -p "=> Nhập domain_name: " DOMAIN
 read -p "=> Nhập email: " email
-nginx_file="$domain.conf"
+nginx_file="$DOMAIN.conf"
 
 # Open port
 # sudo ufw enable
@@ -26,7 +27,7 @@ if ! command -v certbot &> /dev/null; then
 fi
 
 # Add SSL
-sudo certbot --nginx --email $email -d $domain -d www.$domain
+sudo certbot --nginx --email $EMAIL -d $DOMAIN -d www.$DOMAIN
 
 # Renew certbot
 # service nginx stop && certbot renew && service nginx start
@@ -35,25 +36,25 @@ sudo certbot --nginx --email $email -d $domain -d www.$domain
 # Add Nginx domain
 cat > /etc/nginx/conf.d/$nginx_file << EOF
 server {
-    if ($host = $domain) {
+    if ($host = $DOMAIN) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
-  server_name $domain;
+  server_name $DOMAIN;
   return 301 https://$host$request_uri;
 }
 
 server {
   listen 443 ssl;
-  server_name $domain;
-    ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
+  server_name $DOMAIN;
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
 
   ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
   ssl_prefer_server_ciphers on;
   ssl_ciphers AES256+EECDH:AES256+EDH:!aNULL;
 
-  root /home/ruby/$domain/current/public;
+  root /home/$USER_DEPLOY/$DOMAIN/current/public;
   index index.html index.htm;
 
   location / {

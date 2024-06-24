@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "=== Install Jemalloc ==="
 sudo apt-get update
 sudo apt-get install libjemalloc2 libjemalloc-dev -y
@@ -5,7 +7,6 @@ sudo apt install curl gnupg2 dirmngr -y
 echo ''
 
 echo "=== Install Ruby with RBENV ==="
-
 curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
 echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
 echo 'eval "$(rbenv init -)"' >> ~/.bashrc
@@ -13,6 +14,8 @@ source ~/.bashrc
 ~/.rbenv/bin/rbenv init
 eval "$(/root/.rbenv/bin/rbenv init - bash)"
 type rbenv
+sleep 1
+source ~/.bashrc
 
 read -p "Enter the ruby version: " ruby_version
 echo ''

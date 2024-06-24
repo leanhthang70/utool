@@ -15,6 +15,7 @@ if [ "$OPTION" -eq 1 ]; then
   sudo apt install default-jdk -y
 
   rm -rf smartgit
+  sed -i '/alias smg=/d' ~/.bashrc
 
   cd $HOME/.utool/resources
   curl -L -o $SMARTGIT_VERSION https://www.syntevo.com/downloads/smartgit/archive/$SMARTGIT_VERSION
