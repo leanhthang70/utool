@@ -194,8 +194,6 @@ elif [ "$OPTION" -eq 6 ]; then # Restore DB
   else
       echo "Error: Database restoration failed."
   fi
-elif [ "$OPTION" -eq 7 ]; then # Setup replica MASTER Server
-
 else
   echo "Wrong input option (from 1 to 6) ! "
 fi

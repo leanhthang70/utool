@@ -19,8 +19,8 @@ echo "=== Logrotate configuration ==="
 echo "==============================="
 read -p "Enter user: " user
 read -p "Enter max size of log (MB - default 100MB): " max_size
-read -p "Enter logrotate name (EX: rails_rotator_logs): " logrotate_name
-read -p "Enter log directory path (EX: /home/ruby/app_dir/current/log): " log_directory_path
+read -p "Enter logrotate name (e.g., rails_rotator_logs): " logrotate_name
+read -p "Enter log directory path (e.g., /home/ruby/app_dir/current/log): " log_directory_path
 
 # Prompt for confirmation to exit
 read -n 1 -r -s -p $'Press any key to continue or Ctrl+C to exit...\n'
