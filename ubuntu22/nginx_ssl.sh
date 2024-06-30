@@ -35,19 +35,10 @@ sudo certbot --nginx --email $email -d $domain -d www.$domain
 # Add Nginx domain
 cat > /etc/nginx/conf.d/$nginx_file << EOF
 server {
-    if ($host = $domain) {
-        return 301 https://$host$request_uri;
-    } # managed by Certbot
-
-  server_name $domain;
-  return 301 https://$host$request_uri;
-}
-
-server {
   listen 443 ssl;
   server_name $domain;
-    ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
+  ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
 
   ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
   ssl_prefer_server_ciphers on;
@@ -55,11 +46,6 @@ server {
 
   root /home/ruby/$domain/current/public;
   index index.html index.htm;
-
-  location / {
-    passenger_enabled on;
-    passenger_app_env production;
-  }
 
   client_max_body_size 12M;
 
@@ -79,6 +65,7 @@ server {
 }
 EOF
 
-sudo ln -s /etc/nginx/sites-available/$nginx_file /etc/nginx/sites-enabled/
+
+sudo ln -s /etc/nginx/conf.d/$nginx_file /etc/nginx/sites-available/
 sudo nginx -t
 sudo service nginx reload

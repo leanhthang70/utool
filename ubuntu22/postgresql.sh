@@ -34,7 +34,7 @@ elif [ "$OPTION" -eq 1 ]; then
   echo "================================"
   echo "Edit to allow remote connections"
   read -p "=> Do you want allow remote connections? Yes(y): " REMOTE_CONNECTION
-  if [ "$REMOTE_CONNECTION" == "y" ]; then
+  if [ "$REMOTE_CONNECTION" = "y" ]; then
     sudo nano /etc/postgresql/16/main/postgresql.conf
     echo "listen_addresses = '*'" | sudo tee -a /etc/postgresql/16/main/postgresql.conf
 
