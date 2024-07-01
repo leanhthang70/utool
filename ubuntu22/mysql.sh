@@ -157,7 +157,8 @@ elif [ "$OPTION" -eq 5 ]; then # Backup DB
   read -p "Enter backup file name / path (e.g., backup.sql): " BACKUP_FILE
 
   # mysqldump command to create a backup
-  mysqldump -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${MYSQL_DATABASE}" > "${BACKUP_FILE}"
+  sudo mysqldump --verbose --force --opt --user="${ROOT_USER}" -p"${ROOT_PASSWORD}" --databases "${MYSQL_DATABASE}" | gzip > "$BACKUP_DIR/mysql/${BACKUP_FILE}.gz"
+    echo "Finished";
 
   # Check for errors
   if [ $? -eq 0 ]; then
@@ -185,9 +186,9 @@ elif [ "$OPTION" -eq 6 ]; then # Restore DB
   fi
 
   # Restore the modified SQL dump file
-  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
+  # mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
   # mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
-  mysql --verbose -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
+  sudo mariadb  --verbose --force --user="${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
 
   # Check for errors
   if [ $? -eq 0 ]; then
