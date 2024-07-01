@@ -20,8 +20,9 @@ sudo make install
 # ImageMagick
 echo "=== Install ImageMagick ==="
 read -p "=> Do you want to install ImageMagick? Yes(y): " option
-if [ "$option" == "y" ]; then
+if [ "$option" = "y" ]; then
   sudo apt install imagemagick -y
 
   sudo apt install ffmpeg -y
 fi
+cd

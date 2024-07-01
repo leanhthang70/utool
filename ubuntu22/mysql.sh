@@ -33,23 +33,24 @@ if [ "$OPTION" -eq 1 ]; then
   if ! grep -q "^\[mysqld\]" /etc/mysql/my.cnf; then
       echo "[mysqld]" | sudo tee -a /etc/mysql/my.cnf
   fi
-  read -p "=> Size of RAM: " RAM_SIZE
-  sed -i '/^\[mysqld\]/a bind-address = 0.0.0.0' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a max_connections = 500' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a interactive_timeout = 300' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a wait_timeout = 300' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a innodb_file_per_table = 1' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a query_cache_size = 256MB' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a innodb_log_file_size=512MB' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a innodb_log_buffer_size=128MB' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a innodb_strict_mode = ON' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a tmp_table_size=128MB' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a thread_cache_size=256' /etc/mysql/my.cnf
-  sed -i "/^\[mysqld\]/a innodb_buffer_pool_size=${RAM_SIZE*0.5}GB" /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a innodb_lock_wait_timeout=120' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a character-set-server=utf8mb4' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a character_set_client=utf8mb4' /etc/mysql/my.cnf
-  sed -i '/^\[mysqld\]/a collation-server=utf8mb4_general_ci' /etc/mysql/my.cnf
+  echo "Please manually add the following configurations to the /etc/mysql/my.cnf file under the [mysqld] section:"
+  echo "innodb_buffer_pool_size=(TOTAl OF RAM*0.7)G"
+  echo "bind-address = 0.0.0.0 # Allow remote access"
+  echo "max_connections = 500 # Maximum connections"
+  echo "interactive_timeout = 300 # Maximum time to wait for a connection"
+  echo "wait_timeout = 300 # Maximum time to wait for a connection"
+  echo "innodb_file_per_table = 1 # Enable file per table"
+  echo "query_cache_size = 256MB # Query cache size"
+  echo "innodb_log_file_size=512MB # Log file size"
+  echo "innodb_log_buffer_size=128MB # Log buffer size"
+  echo "innodb_strict_mode = ON # Strict mode"
+  echo "tmp_table_size=128MB # Temporary table size"
+  echo "thread_cache_size=256 # Thread cache size"
+  echo "innodb_lock_wait_timeout=120 # Lock wait timeout"
+  echo "character-set-server=utf8mb4 # Character set"
+  echo "character_set_client=utf8mb4 # Character set"
+  echo "collation-server=utf8mb4_general_ci # Collation"
+
   sudo systemctl enable mariadb
   sudo systemctl start mariadb
   sudo systemctl status mariadb
@@ -78,7 +79,7 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
 
   # Prompt the user for new user details
   echo "=== New user details ==="
-  read -p "Type of new user (1 => base; 2 => readonly; 3 => full_permission): " TYPE_USER
+  read -p "Type of new user (1 => app; 2 => readonly; 3 => full_permission): " TYPE_USER
   read -p "Remote access type (1 => all; 2 => localhost; 3 => IP) : " REMOTE_ACCESS
   read -p "Enter new db username: " NEW_DB_USER
   read -p "Enter new db password: " NEW_DB_PASSWORD
@@ -94,7 +95,7 @@ elif [ "$OPTION" -eq 3 ]; then # Create user
   fi
 
   if [ "$TYPE_USER" -eq 1 ]; then
-    PERMISSION="CREATE, SELECT, INSERT, UPDATE, DELETE"
+    PERMISSION="CREATE, SELECT, INSERT, UPDATE, DELETE, INDEX, ALTER"
   elif [ "$TYPE_USER" -eq 2 ]; then
     PERMISSION="SELECT"
   elif [ "$TYPE_USER" -eq 3 ]; then
@@ -153,7 +154,7 @@ elif [ "$OPTION" -eq 5 ]; then # Backup DB
   read -p "Enter MySQL database name: " MYSQL_DATABASE
 
   # Prompt the user for the backup file name
-  read -p "Enter backup file name (e.g., backup.sql): " BACKUP_FILE
+  read -p "Enter backup file name / path (e.g., backup.sql): " BACKUP_FILE
 
   # mysqldump command to create a backup
   mysqldump -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${MYSQL_DATABASE}" > "${BACKUP_FILE}"
@@ -180,13 +181,13 @@ elif [ "$OPTION" -eq 6 ]; then # Restore DB
 
   # Use sed to replace the old database name with the new one
   if [ "$CURRENT_DB_NAME" != "$NEW_DB_NAME" ]; then
-      sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
+    sed -i "s/\`${CURRENT_DB_NAME}\`/\`${NEW_DB_NAME}\`/g" "${DUMP_FILE}"
   fi
 
   # Restore the modified SQL dump file
   mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${NEW_DB_NAME}\`;"
-  mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
-  # mysql --verbose -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
+  # mariadb -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
+  mysql --verbose -u"${ROOT_USER}" -p"${ROOT_PASSWORD}" "${NEW_DB_NAME}" < "${DUMP_FILE}"
 
   # Check for errors
   if [ $? -eq 0 ]; then
