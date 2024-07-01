@@ -7,7 +7,7 @@ read -p "=> Sidekiq file name: " sidekiq_file_name
 
 service_name="${project_name}_${sidekiq_file_name}_v${sidekiq_version}"
 # Kiểm tra file sidekiq
-sidekiq_full_path="${user_deploy_app}/config/${sidekiq_file_name}.yml"
+sidekiq_full_path="${project_path}/config/${sidekiq_file_name}.yml"
 if ! test -e $sidekiq_full_path; then
   echo ""
   echo "=====> ERROR: Không tìm thấy file $sidekiq_full_path."
@@ -27,13 +27,27 @@ After=syslog.target network.target
 # http://0pointer.de/public/systemd-man/systemd.exec.html
 [Service]
 Type=simple
+WatchdogSec=10
 WorkingDirectory=${project_path}
 Environment=RAILS_ENV=production
+# If you use rbenv:
+# ExecStart=/bin/bash -lc 'exec /home/deploy/.rbenv/shims/bundle exec sidekiq -e production'
+# If you use the system's ruby:
+# ExecStart=/usr/local/bin/bundle exec sidekiq -e production
+# If you use rvm in production without gemset and your ruby version is 2.6.5
+# ExecStart=/home/deploy/.rvm/gems/ruby-2.6.5/wrappers/bundle exec sidekiq -e production
+# If you use rvm in production with gemset and your ruby version is 2.6.5
+
 ExecStart=/usr/bin/env bundle exec sidekiq -e production -C config/${sidekiq_file_name}.yml
 ExecReload=/bin/kill -USR1 $MAINPID
 KillMode=process
+
 User=${user_deploy_app}
 Group=${user_deploy_app}
+
+# Greatly reduce Ruby memory fragmentation and heap usage
+# https://www.mikeperham.com/2018/04/25/taming-rails-memory-bloat/
+Environment=MALLOC_ARENA_MAX=2
 
 # if we crash, restart
 # RestartSec=1
