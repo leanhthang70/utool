@@ -28,6 +28,7 @@ fi
 
 # Add SSL
 sudo certbot --nginx --email $EMAIL -d $DOMAIN -d www.$DOMAIN
+sudo certbot certificates
 
 # Renew certbot
 # service nginx stop && certbot renew && service nginx start
@@ -37,10 +38,11 @@ sudo certbot --nginx --email $EMAIL -d $DOMAIN -d www.$DOMAIN
 sudo cat > /etc/nginx/conf.d/$nginx_file << EOF
 server {
   listen 443 ssl;
-  server_name $DOMAIN;
+  server_name $DOMAIN www.$DOMAIN;
 
   ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+
   ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
   ssl_prefer_server_ciphers on;
   ssl_ciphers AES256+EECDH:AES256+EDH:!aNULL;
