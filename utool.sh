@@ -66,6 +66,7 @@ while true; do
   esac
 
   if [ "$INPUT" = "q" ] || [ "$INPUT" = "0" ] || [ "$INPUT" = "quit" ] || [ "$INPUT" = "exit" ]; then
+    cd
     break
   fi
 done
