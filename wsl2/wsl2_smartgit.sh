@@ -4,7 +4,7 @@ echo "Smartgit Version 20_1_6"
 RESOURCE_PATH="$HOME/.smartgit"
 SMARTGIT_VERSION="smartgit-linux-20_1_6.tar.gz"
 
-read -p "=> Smartgit setup (Install enter 1/ Reset enter 2): " OPTION
+read -p "=> Smartgit setup (Install enter 1/ Reset enter 2/ Config git 3): " OPTION
 read -p "=> Alias to run SmartGit (default smg): " SMARTGIT_ALIAS
 SMARTGIT_ALIAS=${SMARTGIT_ALIAS:-smg}
 
@@ -29,6 +29,26 @@ if [ "$OPTION" -eq 1 ]; then
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc
 elif [ "$OPTION" -eq 2 ]; then
   rm -rf $HOME/.config/smartgit/
+elif [ "$OPTION" -eq 3 ]; then
+  echo "=== Config git ==="
+  read -p "Enter your name: " YOUR_NAME
+  read -p "Enter your email: " YOUR_EMAIL
+  git config --global user.name "$YOUR_NAME"
+  git config --global user.email "$YOUR_EMAIL"
+
+  echo "Git config Use VSCode as default editor"
+  git config --global core.editor "code --wait"
+
+  echo "Git config multi-hotfix"
+  git config --add gitflow.multi-hotfix true
+
+  echo "Git config multi-release"
+  git config --add gitflow.multi-release true
+
+  echo "Git config force push"
+  git config --global push.default current
+
+  echo "Git config done !"
 else
   echo "Wrong input option (only 1 or 2) ! "
 fi

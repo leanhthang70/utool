@@ -21,18 +21,8 @@ if [ "$OPTION" -eq 1 ]; then
   if [ -z "$MYSQL_PORT" ]; then
     MYSQL_PORT=3306
   fi
-  sed -i "/^\[client-server\]/a port = $MYSQL_PORT" /etc/mysql/my.cnf
-  # Allow remote access
-  # sudo ufw enable
-  # sudo ufw allow 22
-  # sudo ufw allow $MYSQL_PORT
-  # sudo ufw status
 
-  # Kiểm tra xem đã có phần [mysqld] trong file hay chưa
-  echo "=== Config MariaDB ==="
-  if ! grep -q "^\[mysqld\]" /etc/mysql/my.cnf; then
-      echo "[mysqld]" | sudo tee -a /etc/mysql/my.cnf
-  fi
+  sed -i "/^\[client-server\]/a port = $MYSQL_PORT" /etc/mysql/my.cnf
   echo "Please manually add the following configurations to the /etc/mysql/my.cnf file under the [mysqld] section:"
   echo "innodb_buffer_pool_size=(TOTAl OF RAM*0.7)G"
   echo "bind-address = 0.0.0.0 # Allow remote access"
