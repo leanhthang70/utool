@@ -23,21 +23,12 @@ if [ "$OPTION" -eq 1 ]; then
   tar -xvzf $SMARTGIT_VERSION
   rm -rf $SMARTGIT_VERSION
 
-  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.smartgit/smartgit/bin/ && . smartgit.sh'"
+  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.config/smartgit/bin/ && . smartgit.sh'"
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc
 elif [ "$OPTION" -eq 2 ]; then
   rm -rf $HOME/.config/smartgit/
-elif [ "$OPTION" -eq 3 ]; then
-  echo "=== Config git ==="
-  read -p "Enter your name: " YOUR_NAME
-  read -p "Enter your email: " YOUR_EMAIL
-  git config --global user.name "$YOUR_NAME"
-  git config --global user.email "$YOUR_EMAIL"
-
-  echo "Git config Use VSCode as default editor"
-  git config --global core.editor "code --wait"
 
   echo "Git config multi-hotfix"
   git config --add gitflow.multi-hotfix true
@@ -47,6 +38,15 @@ elif [ "$OPTION" -eq 3 ]; then
 
   echo "Git config force push"
   git config --global push.default current
+elif [ "$OPTION" -eq 3 ]; then
+  echo "=== Config git ==="
+  read -p "Enter your name: " YOUR_NAME
+  read -p "Enter your email: " YOUR_EMAIL
+  git config --global user.name "$YOUR_NAME"
+  git config --global user.email "$YOUR_EMAIL"
+
+  echo "Git config Use VSCode as default editor"
+  git config --global core.editor "code --wait"
 
   echo "Git config done !"
 else
