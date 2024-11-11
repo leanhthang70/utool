@@ -23,7 +23,7 @@ if [ "$OPTION" -eq 1 ]; then
   tar -xvzf $SMARTGIT_VERSION
   rm -rf $SMARTGIT_VERSION
 
-  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.config/smartgit/bin/ && . smartgit.sh'"
+  EXEC_BASH="alias $SMARTGIT_ALIAS='cd $HOME/.utool/resources/smartgit/bin/ && . smartgit.sh'"
   grep -v "$EXEC_PATH" ~/.bashrc > temp_file && mv temp_file ~/.bashrc
   sleep 1
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc
