@@ -29,15 +29,6 @@ if [ "$OPTION" -eq 1 ]; then
   echo "$EXEC_BASH" | sudo tee -a ~/.bashrc
 elif [ "$OPTION" -eq 2 ]; then
   rm -rf $HOME/.config/smartgit/
-
-  echo "Git config multi-hotfix"
-  git config --add gitflow.multi-hotfix true
-
-  echo "Git config multi-release"
-  git config --add gitflow.multi-release true
-
-  echo "Git config force push"
-  git config --global push.default current
 elif [ "$OPTION" -eq 3 ]; then
   echo "=== Config git ==="
   read -p "Enter your name: " YOUR_NAME
@@ -47,6 +38,15 @@ elif [ "$OPTION" -eq 3 ]; then
 
   echo "Git config Use VSCode as default editor"
   git config --global core.editor "code --wait"
+
+  echo "Git config multi-hotfix"
+  git config --add gitflow.multi-hotfix true
+
+  echo "Git config multi-release"
+  git config --add gitflow.multi-release true
+
+  echo "Git config force push"
+  git config --global push.default current
 
   echo "Git config done !"
 else
