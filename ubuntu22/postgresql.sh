@@ -15,7 +15,7 @@ read -p "=> Choose one option: " OPTION
 if [ "$OPTION" = "q" ] || [ "$OPTION" = "0" ] || [ "$OPTION" = "quit" ] || [ "$OPTION" = "exit" ]; then
     echo "Exiting the script..."
 
-  exec "$0"
+  exit 0
 elif [ "$OPTION" -eq 1 ]; then
   echo "=== Install postgreSQL 16 ==="
   sudo apt update -y
@@ -69,7 +69,7 @@ elif [ "$OPTION" -eq 21 ]; then # Create DB
   sudo -u postgres psql -c "CREATE USER $NEW_DB_USER WITH PASSWORD '$NEW_DB_PASSWORD';"
   echo "Granting permissions to user '$NEW_DB_USER'..."
   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $NEW_DB_NAME TO $NEW_DB_USER;"
-  sudo -u postgres psql -c "ALTER USER $NEW_DB_USER WITH SELECT, INSERT, UPDATE, DELETE;"
+  sudo -u postgres psql -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO $NEW_DB_USER;"
 
   echo "Database '$NEW_DB_NAME' and user '$NEW_DB_USER' have been created."
 
@@ -99,7 +99,8 @@ elif [ "$OPTION" -eq 31 ]; then # Create user
 
   # Create the user with specified privileges
   echo "Creating user '$NEW_USERNAME' with privileges: $PRIVILEGES ..."
-  sudo -u postgres psql -c "CREATE USER $NEW_USERNAME WITH PASSWORD '$NEW_USERNAME';"
+  read -p "Enter password for new user: " NEW_USER_PASSWORD
+  sudo -u postgres psql -c "CREATE USER $NEW_USERNAME WITH PASSWORD '$NEW_USER_PASSWORD';"
   sudo -u postgres psql -c "GRANT $PRIVILEGES ON DATABASE dbname TO $NEW_USERNAME;"
 
   echo "User '$NEW_USERNAME' has been created with privileges: $PRIVILEGES."
@@ -112,6 +113,55 @@ elif [ "$OPTION" -eq 32 ]; then
   sudo -u postgres psql -c "DROP ROLE IF EXISTS $USER_TO_DELETE;"
 
   echo "User '$USER_TO_DELETE' has been deleted."
-fi
+# For backup database
+elif [ "$OPTION" -eq 5 ]; then
+  echo "=== Backup PostgreSQL Database ==="
+  # Get database credentials
+  read -p "Enter database name to backup: " DB_NAME
+  read -p "Enter backup file name (e.g., backup.sql): " BACKUP_FILE
 
-sh $(realpath "$0")
+  # Create backup directory if it doesn't exist
+  BACKUP_DIR="$HOME/backups"
+  mkdir -p "$BACKUP_DIR"
+
+  # Create backup with timestamp
+  TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+  BACKUP_PATH="$BACKUP_DIR/${DB_NAME}_${TIMESTAMP}_${BACKUP_FILE}"
+
+  echo "Creating backup of $DB_NAME to $BACKUP_PATH..."
+  sudo -u postgres pg_dump "$DB_NAME" | gzip > "$BACKUP_PATH.sql.gz"
+
+  if [ $? -eq 0 ]; then
+    echo "Backup completed successfully"
+    echo "Backup saved to: $BACKUP_PATH"
+  else
+    echo "Error: Backup failed"
+  fi
+
+# For restore database
+elif [ "$OPTION" -eq 6 ]; then
+  echo "=== Restore PostgreSQL Database ==="
+  read -p "Enter target database name: " DB_NAME
+  read -p "Enter backup file path to restore: " BACKUP_FILE
+  # read -p "Enter user make restore: " USER_NAME
+
+  # Check if backup file exists
+  if [ ! -f "$BACKUP_FILE" ]; then
+    echo "Error: Backup file not found!"
+    exit 1
+  fi
+
+  # Check if database exists, if not create it
+  echo "Creating database if it doesn't exist..."
+  sudo -u postgresql psql -c "CREATE DATABASE $DB_NAME;" 2>/dev/null
+
+  echo "Restoring backup to $DB_NAME..."
+  # sudo -u postgres psql "$DB_NAME" < "$BACKUP_FILE"
+  gunzip -c "$BACKUP_PATH.sql.gz" | sudo psql -U postgresql "$DB_NAME"
+
+  if [ $? -eq 0 ]; then
+    echo "Restore completed successfully"
+  else
+    echo "Error: Restore failed"
+  fi
+fi
