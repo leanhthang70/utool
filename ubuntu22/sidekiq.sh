@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 # Lấy giá trị của sidekiq version, project path và sidekiq file từ các tham số dòng lệnh
 read -p "=> Enter user deploy (ruby): " user_deploy_app
 read -p "=> Project path (/home/ruby/project_name): " project_path
@@ -71,3 +74,9 @@ sudo systemctl status $service_name
 sudo systemctl enable $service_name
 
 echo "${user_deploy_app} ALL=NOPASSWD: /bin/systemctl restart ${service_name}" | sudo tee -a /etc/sudoers
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi

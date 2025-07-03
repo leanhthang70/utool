@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 echo "=== Install Jemalloc ==="
 sudo apt-get update
 sudo apt-get install libjemalloc2 libjemalloc-dev -y
@@ -26,3 +29,9 @@ rbenv global $ruby_version
 ruby -e "p RbConfig::CONFIG['MAINLIBS']"
 which ruby
 ruby -v
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi

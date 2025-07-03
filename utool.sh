@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 UTOOL_OPTION="$1"
 SCRIPT_PATH="$(realpath "$BASH_SOURCE")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
@@ -13,20 +16,35 @@ fi
 
 MENU="
   ==========================================
-                  MENU
+              UTOOL - Enhanced v2.0
   ==========================================
-  1. Install dependencies for compiling Ruby            50. WSLSmartGit UI
-  2. Install lib support image processing               51. WSL2 add some alias by IDE
-  3. Install Redis and sidekiq 7                        52. Install docker
+  💎 Development Environment:
+  1. Install dependencies for compiling Ruby            
+  2. Install lib support image processing               
+  3. Install Redis and sidekiq 7                        
   4. Tạo deploy user
-  5. Setup Database MariaDB 11.4.2
+  
+  🗄️  Database Management:
+  5. Setup Database MariaDB 11.4.2 (Enhanced)
   6. Setup Database PostgreSQL 15
+  
+  🌐 Web & Network:
   7. Install Rails
-  8. Add Domain (Nginx/Host)
+  8. Add Domain (Nginx/Host) (Enhanced)
+  
+  🔧 System Tools:
   10. Add Logrotate
   11. SSH keygen
   12. Setup capitrano deploy
 
+  🐳 Container & WSL:
+  50. WSLSmartGit UI
+  51. WSL2 add some alias by IDE
+  52. Install Docker (Enhanced)
+  
+  🚀 Enhanced Tools:
+  99. Launch Enhanced Management Interface
+  
   100. Remove UTool
   Exit (q|quit|exit|0)
 
@@ -61,12 +79,17 @@ while true; do
       sh $SCRIPT_DIR/wsl2/wsl2_smartgit.sh;;
     51)
       sh $SCRIPT_DIR/wsl2/wsl2_add_alias.sh;;
+    52)
+      sh $SCRIPT_DIR/ubuntu22/docker.sh;;
+    99)
+      echo "🚀 Launching Management Interface..."
+      bash $SCRIPT_DIR/ubuntu22/main.sh;;
     100)
       bash $SCRIPT_DIR/uninstall_utool;;
   esac
 
   if [ "$INPUT" = "q" ] || [ "$INPUT" = "0" ] || [ "$INPUT" = "quit" ] || [ "$INPUT" = "exit" ]; then
-    cd
+    cd "$ORIGINAL_DIR"
     break
   fi
 done

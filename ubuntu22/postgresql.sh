@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 echo "1) Install PostgreSQL 16 "
 echo "21) Create database "
 echo "22) Drop database "
@@ -164,4 +167,10 @@ elif [ "$OPTION" -eq 6 ]; then
   else
     echo "Error: Restore failed"
   fi
+fi
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
 fi

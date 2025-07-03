@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 read -p "=> Type 1 add, 2 to change password, 3 remove user: " option
 read -p "=> username: " user_name
 
@@ -14,4 +17,10 @@ elif [ "$option" -eq 3 ]; then
   sudo userdel -r $user_name
 else
   echo "Unknown option type. Please enter 1 or 2 !"
+fi
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
 fi

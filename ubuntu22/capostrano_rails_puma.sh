@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 #
 echo "Puma Rails Server"
 
@@ -28,3 +31,9 @@ WantedBy=multi-user.target
 EOF
 
 echo "=== NGinx ==="
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi

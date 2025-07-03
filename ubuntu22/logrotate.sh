@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 # FILEPATH: /home/lat/utool/ubuntu22/logrotate.sh
 
 # Check if logrotate is installed
@@ -41,3 +44,9 @@ $log_directory_path/*.log {
 }
 EOF
 sudo logrotate -f "/etc/logrotate.d/$logrotate_name"
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi

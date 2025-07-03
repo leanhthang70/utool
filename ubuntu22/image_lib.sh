@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 echo "=== Install Image Processing ==="
 sudo apt update
 
@@ -26,3 +29,9 @@ if [ "$option" = "y" ]; then
   sudo apt install ffmpeg -y
 fi
 cd
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi

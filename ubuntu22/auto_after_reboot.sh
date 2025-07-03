@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 # Lấy giá trị của sidekiq version, project path và sidekiq file từ các tham số dòng lệnh
 echo "Tạo service tự động run mỗi khi reboot"
 read -p "=> Nhập path chứa script: " script_path
@@ -26,4 +29,10 @@ sudo systemctl start $service_name
 
 else
   echo "Tệp tin không tồn tại."
+fi
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
 fi

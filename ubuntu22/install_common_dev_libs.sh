@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Save original directory
+ORIGINAL_DIR="$(pwd)"
+
 echo "=== Install dependencies for compiling Ruby ==="
 
 sudo apt-get update
@@ -32,3 +35,9 @@ if [ "$OPTION" = "y" ]; then
 fi
 
 echo "==================== END ===================="
+
+# Return to original directory
+if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
+    cd "$ORIGINAL_DIR"
+    echo "Returned to original directory: $ORIGINAL_DIR"
+fi
