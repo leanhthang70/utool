@@ -3,7 +3,7 @@
 # Pull script install
 cd && rm -rf .utool
 
-git clone https://github.com/leanhthang/utool.git
+git clone https://github.com/leanhthang70/utool.git
 
 mv utool .utool  && cd .utool
 
