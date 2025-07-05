@@ -1,23 +1,41 @@
-## Utool - Quick Server Deployment and Configuration Tool
+# Utool - DevOps & Developer Productivity Toolkit
 
-Utool is a powerful tool support configuring servers, it verry lightweight and providing an efficient and time-saving experience for system administrators
+Utool is a modern toolkit for DevOps, sysadmins, and developers, designed to automate server configuration, deployment, service management, and optimize development environments on both Linux and Windows.
 
-### How to install UTool
+## Key Features
+
+- **Quick install & management of popular services:**
+  - MySQL/MariaDB, PostgreSQL, Nginx, Docker, Redis, Sidekiq, Rails, Node.js, and more.
+- **Automated backup, restore, security, and database performance optimization**
+- **User management, permission control, password reset, connection testing, and troubleshooting**
+- **Integrated scripts for Windows to help developers:**
+  - Create aliases, configure WSL2, install SmartGit, SSH, Git, VSCode, etc.
+  - Support for synchronizing development environments between Windows and Linux
+- **Professional, user-friendly CLI menu with multi-language support**
+- **Highly customizable and extensible for modern DevOps needs**
+
+## How to Install Utool
 
 ```bash
 cd && curl -O https://raw.githubusercontent.com/leanhthang70/utool/refs/heads/master/install_utool && bash install_utool
 ```
 
-### How to update new version Utool
+## How to Update Utool
 
-run `utool update`
+```bash
+utool update
+```
 
-### How to remove UTool
+## How to Uninstall Utool
 
-run `utool` and select option `100`
+Run `utool` and select option `100` to completely remove Utool.
 
-### How to use
+## How to Start Utool
 
 ```bash
 utool
 ```
+
+---
+
+**Utool** saves you time, reduces manual errors, and boosts DevOps and developer productivity on any platform!
