@@ -91,6 +91,13 @@ debug() {
     log "DEBUG" "$message"
 }
 
+# Function to show error message
+error() {
+    local message="$1"
+    echo -e "${RED}❌ $message${NC}"
+    log "ERROR" "$message"
+}
+
 # Function to show error and exit
 error_exit() {
     local message="$1"

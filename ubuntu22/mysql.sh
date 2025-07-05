@@ -23,9 +23,70 @@ fi
 
 # Script configuration
 SCRIPT_NAME="MySQL/MariaDB Management"
-MARIADB_VERSION="11.4.2"
+MARIADB_VERSION="11.4.2"  # Default version
 MYSQL_CONF_FILE="/etc/mysql/my.cnf"
 BACKUP_DIR="${BACKUP_DIR:-/opt/backups/mysql}"
+
+# Available MariaDB versions
+AVAILABLE_MARIADB_VERSIONS=(
+    "11.4.2"
+    "11.4.1"
+    "11.3.2"
+    "11.2.4"
+    "11.1.5"
+    "10.11.8"
+    "10.6.18"
+    "10.5.25"
+)
+
+# Function to show available MariaDB versions
+show_mariadb_versions() {
+    echo ""
+    echo "📋 Available MariaDB Versions:"
+    echo "=============================="
+    for i in "${!AVAILABLE_MARIADB_VERSIONS[@]}"; do
+        local version="${AVAILABLE_MARIADB_VERSIONS[$i]}"
+        local status=""
+        if [[ "$version" == "$MARIADB_VERSION" ]]; then
+            status=" (Default)"
+        fi
+        echo "  $((i+1))) MariaDB $version$status"
+    done
+    echo "  0) Custom version (manual input)"
+    echo ""
+}
+
+# Function to select MariaDB version
+select_mariadb_version() {
+    show_mariadb_versions
+    
+    while true; do
+        read -p "Choose MariaDB version (1-${#AVAILABLE_MARIADB_VERSIONS[@]} or 0 for custom): " version_choice
+        
+        if [[ "$version_choice" =~ ^[0-9]+$ ]]; then
+            if [[ "$version_choice" -eq 0 ]]; then
+                # Custom version input
+                read -p "Enter custom MariaDB version (e.g., 11.4.2): " custom_version
+                if [[ -n "$custom_version" ]]; then
+                    MARIADB_VERSION="$custom_version"
+                    success "Selected custom version: MariaDB $MARIADB_VERSION"
+                    break
+                else
+                    error "Invalid version. Please try again."
+                fi
+            elif [[ "$version_choice" -ge 1 && "$version_choice" -le "${#AVAILABLE_MARIADB_VERSIONS[@]}" ]]; then
+                # Selected from list
+                MARIADB_VERSION="${AVAILABLE_MARIADB_VERSIONS[$((version_choice-1))]}"
+                success "Selected version: MariaDB $MARIADB_VERSION"
+                break
+            else
+                error "Invalid option. Please choose 1-${#AVAILABLE_MARIADB_VERSIONS[@]} or 0."
+            fi
+        else
+            error "Please enter a valid number."
+        fi
+    done
+}
 
 # Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
@@ -49,12 +110,12 @@ validate_credentials() {
 
 # Function to show menu
 show_menu() {
-    echo ""
     echo "📋 Available Options:"
     echo ""
     echo "   🔧 Installation & Setup:"
-    echo "     1) Install MariaDB                    - Download và cài đặt MariaDB 11.4.2"
+    echo "     1) Install MariaDB $MARIADB_VERSION                - Download và cài đặt MariaDB $MARIADB_VERSION"
     echo "     2) Check Installation Status          - Kiểm tra trạng thái cài đặt và service"
+    echo "    18) Select MariaDB Version             - Chọn phiên bản MariaDB khác"
     echo ""
     echo "   🗄️  Database Management:"
     echo "     3) Create Database                    - Tạo database mới với charset UTF8MB4"
@@ -76,13 +137,24 @@ show_menu() {
     echo "    13) Optimize Database                  - Tối ưu hóa performance database"
     echo "    14) Security Configuration            - Cấu hình bảo mật nâng cao"
     echo "    15) Performance Tuning                - Điều chỉnh hiệu suất MySQL"
+    echo "    16) Reset Root Password                - Đặt lại mật khẩu root MySQL"
+    echo "    17) Connection Troubleshoot            - Kiểm tra kết nối MySQL"
     echo ""
-    echo "     0) Exit                              - Thoát khỏi MySQL Management"
+    echo "     0 or q) Exit                         - Thoát khỏi MySQL Management"
     echo ""
 }
 
 # Function to install MariaDB
 install_mariadb() {
+    echo ""
+    echo "🚀 MariaDB Installation Setup"
+    echo "============================="
+    
+    # Version selection
+    echo ""
+    echo "📦 Step 1: Select MariaDB Version"
+    select_mariadb_version
+    
     show_progress "Installing MariaDB $MARIADB_VERSION"
     
     # Check if MariaDB is already installed
@@ -90,8 +162,20 @@ install_mariadb() {
         warning "MariaDB is already installed"
         local current_version=$(mariadb --version | cut -d' ' -f3 | cut -d'-' -f1)
         echo "Current version: $current_version"
-        if ! prompt_yes_no "Continue with configuration?" "y"; then
-            return 0
+        echo "Selected version: $MARIADB_VERSION"
+        
+        if [[ "$current_version" == "$MARIADB_VERSION"* ]]; then
+            echo "✅ Requested version is already installed"
+            if ! prompt_yes_no "Continue with configuration?" "y"; then
+                return 0
+            fi
+        else
+            echo ""
+            warning "⚠️  Different version detected!"
+            echo "This will upgrade/downgrade MariaDB to version $MARIADB_VERSION"
+            if ! prompt_yes_no "Continue with installation?" "n"; then
+                return 0
+            fi
         fi
     fi
     
@@ -301,6 +385,24 @@ create_database() {
     fi
 }
 
+# Function to create a database if it doesn't exist
+create_database_if_not_exists() {
+    local db_name="$1"
+    local root_user="$2"
+    local root_password="$3"
+
+    if [[ -z "$db_name" || "$db_name" == "*" ]]; then
+        return 0 # Do nothing if db_name is empty or for all databases
+    fi
+
+    local query="CREATE DATABASE IF NOT EXISTS \`$db_name\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+    if ! mysql --user="$root_user" --password="$root_password" -e "$query" 2>/dev/null; then
+        warning "Could not automatically create database '$db_name'. It may not exist."
+        return 1
+    fi
+    return 0
+}
+
 # Function to drop database
 drop_database() {
     show_progress "Dropping database"
@@ -345,6 +447,26 @@ create_user() {
     read -s -p "Enter MySQL root password: " root_password
     echo
     
+    # Test connection first
+    show_progress "Testing database connection"
+    if ! mysql --user="$root_user" --password="$root_password" -e "SELECT 1;" 2>/dev/null; then
+        echo ""
+        error "❌ Cannot connect to MySQL with provided credentials"
+        echo ""
+        echo "🔧 Troubleshooting options:"
+        echo "1. Check if MySQL/MariaDB service is running:"
+        echo "   sudo systemctl status mariadb"
+        echo ""
+        echo "2. Try connecting without password (if root password not set):"
+        echo "   sudo mysql"
+        echo ""
+        echo "3. Reset root password if needed:"
+        echo "   Run option 16 from menu (Reset Root Password)"
+        echo ""
+        return 1
+    fi
+    success "Database connection successful"
+    
     # Get user details
     local username
     local password
@@ -356,9 +478,21 @@ create_user() {
     read -p "Enter new username: " username
     validate_not_empty "$username" "Username"
     
-    read -s -p "Enter password for new user: " password
-    echo
-    validate_not_empty "$password" "Password"
+    while true; do
+        read -s -p "Enter password for new user: " password
+        echo
+        validate_not_empty "$password" "Password"
+        
+        read -s -p "Confirm password for new user: " confirm_password
+        echo
+        
+        if [[ "$password" == "$confirm_password" ]]; then
+            break
+        else
+            error "Passwords do not match. Please try again."
+            echo
+        fi
+    done
     
     echo "User Types:"
     echo "  1) Application user (CREATE, SELECT, INSERT, UPDATE, DELETE, INDEX, ALTER)"
@@ -396,20 +530,57 @@ create_user() {
     read -p "Enter database name (or press Enter for all databases): " database
     database=${database:-"*"}
     
-    # Create user
-    local queries=(
-        "CREATE USER IF NOT EXISTS '$username'@'$host' IDENTIFIED BY '$password';"
-        "GRANT $permissions ON \`$database\`.* TO '$username'@'$host';"
-        "FLUSH PRIVILEGES;"
-    )
+    # Prepare database name for SQL
+    local db_sql
+    if [[ "$database" == "*" ]]; then
+        db_sql="*"
+    else
+        db_sql="\`$database\`"
+    fi
     
-    for query in "${queries[@]}"; do
-        if ! mysql --user="$root_user" --password="$root_password" -e "$query" 2>/dev/null; then
-            error_exit "Failed to create user '$username'"
-        fi
-    done
+    # Create user with better error handling
+    echo ""
+    show_progress "Creating user '$username'@'$host'"
     
-    success "User '$username' created successfully with $permissions privileges"
+    # Step 1: Create user
+    local create_query="CREATE USER IF NOT EXISTS '$username'@'$host' IDENTIFIED BY '$password';"
+    if ! mysql --user="$root_user" --password="$root_password" -e "$create_query" 2>/tmp/mysql_error.log; then
+        echo ""
+        error "❌ Failed to create user. Error details:"
+        cat /tmp/mysql_error.log
+        rm -f /tmp/mysql_error.log
+        return 1
+    fi
+    
+    # Step 2: Grant permissions
+    local grant_query="GRANT $permissions ON $db_sql.* TO '$username'@'$host';"
+    if ! mysql --user="$root_user" --password="$root_password" -e "$grant_query" 2>/tmp/mysql_error.log; then
+        echo ""
+        error "❌ Failed to grant permissions. Error details:"
+        cat /tmp/mysql_error.log
+        rm -f /tmp/mysql_error.log
+        return 1
+    fi
+    
+    # Step 3: Flush privileges
+    if ! mysql --user="$root_user" --password="$root_password" -e "FLUSH PRIVILEGES;" 2>/tmp/mysql_error.log; then
+        echo ""
+        error "❌ Failed to flush privileges. Error details:"
+        cat /tmp/mysql_error.log
+        rm -f /tmp/mysql_error.log
+        return 1
+    fi
+    
+    # Clean up temp file
+    rm -f /tmp/mysql_error.log
+    
+    echo ""
+    success "✅ User '$username'@'$host' created successfully!"
+    echo "📋 Summary:"
+    echo "   • Username: $username"
+    echo "   • Host: $host"
+    echo "   • Database: $database"
+    echo "   • Permissions: $permissions"
 }
 
 # Function to backup database
@@ -525,7 +696,7 @@ show_database_status() {
     mysql --user="$root_user" --password="$root_password" -e "SHOW STATUS LIKE 'Threads_connected';" 2>/dev/null
 }
 
-# Function to check MariaDB installation status
+# Function to check installation status
 check_installation_status() {
     echo ""
     echo "🔍 MariaDB Installation Status:"
@@ -654,8 +825,225 @@ cleanup_failed_installation() {
     warning "Cleanup completed. You can try installation again."
 }
 
+# Function to reset root password
+reset_root_password() {
+    show_progress "Resetting MySQL root password"
+    
+    echo ""
+    echo "🔐 MySQL Root Password Reset:"
+    echo "============================"
+    echo ""
+    echo "⚠️  This will reset the MySQL root password."
+    echo "    Make sure to remember the new password!"
+    echo ""
+    
+    if ! prompt_yes_no "Continue with root password reset?" "n"; then
+        log "INFO" "Root password reset cancelled"
+        return 0
+    fi
+    
+    # Get new password
+    local new_password
+    local confirm_password
+    
+    while true; do
+        read -s -p "Enter new root password: " new_password
+        echo
+        validate_not_empty "$new_password" "Password"
+        
+        read -s -p "Confirm new root password: " confirm_password
+        echo
+        
+        if [[ "$new_password" == "$confirm_password" ]]; then
+            break
+        else
+            error "Passwords do not match. Please try again."
+            echo
+        fi
+    done
+    
+    # Method 1: Try using sudo mysql first (if available)
+    show_progress "Attempting password reset with sudo method"
+    if sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '$new_password'; FLUSH PRIVILEGES;" 2>/dev/null; then
+        success "✅ Root password reset successfully using sudo method"
+        
+        # Test new password
+        if mysql -u root -p"$new_password" -e "SELECT 1;" 2>/dev/null; then
+            echo ""
+            success "✅ Root password reset completed successfully!"
+            echo "📋 New credentials:"
+            echo "   • Username: root"
+            echo "   • Password: [the password you just set]"
+            echo ""
+            echo "⚠️  Please save this password securely!"
+            return 0
+        fi
+    fi
+    
+    # Method 2: Safe mode method (fallback)
+    echo ""
+    warning "Sudo method failed, trying safe mode method..."
+    
+    # Stop MySQL service
+    show_progress "Stopping MySQL service"
+    sudo systemctl stop mariadb
+    sleep 3
+    
+    # Kill any remaining MySQL processes
+    sudo pkill -f mysqld 2>/dev/null || true
+    sudo pkill -f mariadbd 2>/dev/null || true
+    sleep 2
+    
+    # Create temporary init file
+    local init_file="/tmp/mysql_init_$$.sql"
+    cat > "$init_file" << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$new_password';
+FLUSH PRIVILEGES;
+EOF
+    
+    # Start MySQL with init file
+    show_progress "Starting MySQL with password reset"
+    if sudo mysqld_safe --init-file="$init_file" --skip-networking &>/dev/null &
+    then
+        local safe_pid=$!
+        sleep 10
+        
+        # Stop the safe mode process
+        sudo kill $safe_pid 2>/dev/null || true
+        sleep 3
+        
+        # Clean up
+        rm -f "$init_file"
+        
+        # Start MySQL normally
+        show_progress "Starting MySQL service normally"
+        sudo systemctl start mariadb
+        sleep 5
+        
+        # Test new password
+        if mysql -u root -p"$new_password" -e "SELECT 1;" 2>/dev/null; then
+            echo ""
+            success "✅ Root password reset completed successfully!"
+            echo "📋 New credentials:"
+            echo "   • Username: root"
+            echo "   • Password: [the password you just set]"
+            echo ""
+            echo "⚠️  Please save this password securely!"
+            return 0
+        else
+            error "Password reset failed - could not verify new password"
+        fi
+    else
+        error "Failed to start MySQL in safe mode"
+    fi
+    
+    # Cleanup and restore service
+    rm -f "$init_file"
+    sudo pkill -f mysqld 2>/dev/null || true
+    sudo pkill -f mariadbd 2>/dev/null || true
+    sleep 2
+    
+    # Try to restart normally
+    show_progress "Attempting to restart MySQL service"
+    sudo systemctl start mariadb
+    
+    if sudo systemctl is_active mariadb &>/dev/null; then
+        warning "MySQL service restored, but password reset failed"
+        echo ""
+        echo "🔧 Alternative methods to try:"
+        echo "1. Use 'sudo mysql' to access without password"
+        echo "2. Try manual reset: sudo mysql -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpass';\""
+        echo "3. Check MariaDB documentation for version-specific steps"
+        return 1
+    else
+        error_exit "Failed to reset password and restore MySQL service"
+    fi
+}
+
+# Function to connect to MySQL without password (for troubleshooting)
+connect_without_password() {
+    show_progress "Testing MySQL connection without password"
+    
+    echo ""
+    echo "🔍 Testing MySQL Connection Methods:"
+    echo "==================================="
+    echo ""
+    
+    # Method 1: Try connecting as root without password
+    echo "1️⃣  Testing: mysql -u root"
+    if mysql -u root -e "SELECT 'Connection successful' as Status;" 2>/dev/null; then
+        success "✅ Can connect as root without password"
+        echo "   You can use empty password for root user"
+        return 0
+    else
+        echo "   ❌ Cannot connect without password"
+    fi
+    
+    echo ""
+    
+    # Method 2: Try using sudo
+    echo "2️⃣  Testing: sudo mysql"
+    if sudo mysql -e "SELECT 'Connection successful' as Status;" 2>/dev/null; then
+        success "✅ Can connect using sudo mysql"
+        echo "   You can access MySQL using: sudo mysql"
+        echo ""
+        echo "📋 To set root password from sudo mysql:"
+        echo "   ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';"
+        echo "   FLUSH PRIVILEGES;"
+        return 0
+    else
+        echo "   ❌ Cannot connect using sudo"
+    fi
+    
+    echo ""
+    
+    # Method 3: Check if MySQL is running
+    echo "3️⃣  Checking MySQL service status"
+    local service_status=$(systemctl is-active mariadb 2>/dev/null)
+    case "$service_status" in
+        "active") 
+            echo "   ✅ MySQL service is running"
+            ;;
+        "inactive") 
+            echo "   ❌ MySQL service is stopped"
+            echo "   Try: sudo systemctl start mariadb"
+            ;;
+        "failed") 
+            echo "   ❌ MySQL service failed to start"
+            echo "   Check logs: sudo journalctl -u mariadb"
+            ;;
+        *) 
+            echo "   ❓ MySQL service status unknown"
+            ;;
+    esac
+    
+    echo ""
+    echo "🔧 Recommended troubleshooting steps:"
+    echo "1. Use option 16 (Reset Root Password) if you forgot the password"
+    echo "2. Use 'sudo mysql' to access database as admin"
+    echo "3. Check service status with option 2"
+    echo ""
+}
+
+# Function to get current installed MariaDB version
+get_current_mariadb_version() {
+    if command -v mariadb &> /dev/null; then
+        mariadb --version | cut -d' ' -f3 | cut -d'-' -f1
+    else
+        echo "Not installed"
+    fi
+}
+
+# Function to update script title based on selected version
+update_script_title() {
+    SCRIPT_NAME="MySQL/MariaDB $MARIADB_VERSION Management"
+}
+
 # Main function
 main() {
+    # Initialize script title
+    update_script_title
+    
     # Print header
     echo "================================================================"
     echo "              🗄️  $SCRIPT_NAME (Enhanced)"
@@ -697,17 +1085,22 @@ main() {
             15) 
                 log "INFO" "Performance tuning feature - coming soon"
                 ;;
-            0) 
+            16) reset_root_password ;;
+            17) connect_without_password ;;
+            18) 
+                select_mariadb_version
+                update_script_title
+                success "MariaDB version changed to $MARIADB_VERSION"
+                ;;
+            0|q) 
                 log "INFO" "Exiting MySQL/MariaDB management"
                 exit 0
                 ;;
             *) 
-                warning "Invalid option. Please choose 0-15."
+                warning "Invalid option. Please choose 0-18."
                 ;;
         esac
         
-        echo ""
-        read -p "Press Enter to continue..."
     done
 }
 

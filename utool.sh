@@ -18,11 +18,11 @@ MENU="
   ==========================================
                   MENU
   ==========================================
-  📦 1. Install dependencies for compiling Ruby    🎨 50. WSLSmartGit UI
-  🖼️  2. Install lib support image processing      🔧 51. WSL2 add some alias by IDE
-  🔴 3. Install Redis and sidekiq 7                🐳 52. Install docker
-  👤 4. Tạo deploy user                             🗑️  100. Remove UTool
-  🗄️  5. Setup Database MariaDB 11.4.2
+  📦 1. Install dependencies for compiling Ruby     🎨 50. WSLSmartGit UI
+  🖼️ 2. Install lib support image processing        🔧 51. WSL2 add some alias by IDE
+  🔴 3. Install Redis and sidekiq 7                 🐳 52. Install docker
+  👤 4. Tạo deploy user                             🗑️ 100. Remove UTool
+  🗄️ 5. Setup Database MariaDB 11.4.2
   🐘 6. Setup Database PostgreSQL 15               🚪 Exit (q|quit|exit|0)
   💎 7. Install Rails
   🌐 8. Add Domain (Nginx/Host)
