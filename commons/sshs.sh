@@ -62,20 +62,39 @@ if [ "$main_option" = "1" ]; then
 
     echo "Configuring ~/.ssh/config..."
     host_name="${keyfile}"
-    read -p "=> Nhập HostName cho Host $host_name (Enter để mặc định github.com): " input_hostname
-    hostname_value=${input_hostname:-github.com}
-    if ! grep -q "^Host $host_name$" "$HOME/.ssh/config" 2>/dev/null; then
-        cat <<EOF >> $HOME/.ssh/config
+    read -p "=> Nhập HostName (IP hoặc domain): " input_hostname
+    if [ -z "$input_hostname" ]; then
+        echo "HostName không được để trống. Bỏ qua việc tạo config."
+    else
+        hostname_value="$input_hostname"
+        
+        # Ask for User only if needed
+        default_user=""
+        user_config=""
+        if [[ "$hostname_value" == *"github.com"* ]] || [[ "$hostname_value" == *"gitlab.com"* ]]; then
+            default_user="git"
+            echo "Detected Git hosting service. Using default user: git"
+            user_config="    User git"
+        else
+            read -p "=> Nhập User (Enter để bỏ qua): " input_user
+            if [ -n "$input_user" ]; then
+                user_config="    User $input_user"
+            fi
+        fi
+        
+        if ! grep -q "^Host $host_name$" "$HOME/.ssh/config" 2>/dev/null; then
+            cat <<EOF >> $HOME/.ssh/config
 
 Host $host_name
     HostName $hostname_value
-    User git
+$user_config
     IdentityFile ~/.ssh/$keyfile
     IdentitiesOnly yes
 EOF
-        echo "Config entry added for Host: $host_name (HostName: $hostname_value)"
-    else
-        echo "Config entry for Host: $host_name already exists."
+            echo "Config entry added for Host: $host_name (HostName: $hostname_value)"
+        else
+            echo "Config entry for Host: $host_name already exists."
+        fi
     fi
 
     echo "Done!"
@@ -102,13 +121,30 @@ elif [ "$main_option" = "2" ]; then
             found_keys=true
             host_name="${key}"
             if ! grep -q "^Host $host_name$" "$config_file"; then
-                read -p "=> Nhập HostName cho Host $host_name (Enter để mặc định github.com): " input_hostname
-                hostname_value=${input_hostname:-github.com}
+                read -p "=> Nhập HostName cho Host $host_name: " input_hostname
+                if [ -z "$input_hostname" ]; then
+                    echo "HostName không được để trống. Bỏ qua key: $key"
+                    continue
+                fi
+                hostname_value="$input_hostname"
+                
+                # Ask for User only if needed
+                user_config=""
+                if [[ "$hostname_value" == *"github.com"* ]] || [[ "$hostname_value" == *"gitlab.com"* ]]; then
+                    echo "Detected Git hosting service. Using default user: git"
+                    user_config="    User git"
+                else
+                    read -p "=> Nhập User cho Host $host_name (Enter để bỏ qua): " input_user
+                    if [ -n "$input_user" ]; then
+                        user_config="    User $input_user"
+                    fi
+                fi
+                
                 cat <<EOF >> "$config_file"
 
 Host $host_name
     HostName $hostname_value
-    User git
+$user_config
     IdentityFile ~/.ssh/$key
     IdentitiesOnly yes
 EOF
