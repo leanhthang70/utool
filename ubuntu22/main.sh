@@ -7,8 +7,19 @@
 ORIGINAL_DIR="$(pwd)"
 export ORIGINAL_DIR
 
-# Source common functions
-source "$(dirname "$0")/common.sh"
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common functions with error checking
+COMMON_FILE="$SCRIPT_DIR/common.sh"
+if [[ -f "$COMMON_FILE" ]]; then
+    source "$COMMON_FILE"
+else
+    echo "Error: Cannot find common.sh at $COMMON_FILE"
+    echo "Current directory: $(pwd)"
+    echo "Script directory: $SCRIPT_DIR"
+    exit 1
+fi
 
 # Script configuration
 SCRIPT_NAME="Ubuntu 22 Development Environment Setup"
@@ -20,7 +31,7 @@ clear
 echo "================================================================"
 echo "       🚀 $SCRIPT_NAME v$SCRIPT_VERSION"
 echo "================================================================"
-echo "       Enhanced with better error handling and logging"
+echo "       Enhanced with better error handling and validation"
 echo "================================================================"
 
 # Function to create backup checkpoint
@@ -94,44 +105,44 @@ show_main_menu() {
     echo "📋 Available Tools:"
     echo ""
     echo "   🐳 Docker & Containers:"
-    echo "     1) Install Docker (Enhanced)"
+    echo "     1) Install Docker (Enhanced)          - Cài đặt Docker với security features"
     echo ""
     echo "   🌐 Web Server & SSL:"
-    echo "     2) Setup Nginx with SSL (Enhanced)"
+    echo "     2) Setup Nginx with SSL (Enhanced)    - Cài đặt Nginx với SSL tự động"
     echo ""
     echo "   🗄️  Database Management:"
-    echo "     3) MySQL/MariaDB Management (Enhanced)"
-    echo "     4) PostgreSQL Management"
+    echo "     3) MySQL/MariaDB Management (Enhanced) - Quản lý database với menu đầy đủ"
+    echo "     4) PostgreSQL Management              - Cài đặt và cấu hình PostgreSQL"
     echo ""
     echo "   💎 Development Environment:"
-    echo "     5) Install Ruby with rbenv"
-    echo "     6) Install Node.js & Development Libraries"
-    echo "     7) Install Image Processing Libraries"
+    echo "     5) Install Ruby with rbenv           - Cài đặt Ruby version manager"
+    echo "     6) Install Node.js & Development Libraries - Cài đặt Node.js và build tools"
+    echo "     7) Install Image Processing Libraries - ImageMagick, libvips, FFmpeg"
     echo ""
     echo "   🔧 System Services:"
-    echo "     8) Setup Auto-start Service"
-    echo "     9) Setup Sidekiq Background Jobs"
-    echo "     10) Setup Log Rotation"
-    echo "     11) User Management"
+    echo "     8) Setup Auto-start Service          - Tạo systemd service tự động chạy"
+    echo "     9) Setup Sidekiq Background Jobs     - Cài đặt Redis và Sidekiq worker"
+    echo "    10) Setup Log Rotation                - Cấu hình logrotate cho ứng dụng"
+    echo "    11) User Management                   - Tạo user deploy với SSH keys"
     echo ""
     echo "   🛠️  System Tools:"
-    echo "     12) System Information"
-    echo "     13) Cleanup & Maintenance"
-    echo "     14) Backup Management"
-    echo "     15) Configuration Management"
-    echo "     16) Security Hardening"
+    echo "    12) System Information                - Hiển thị thông tin hệ thống chi tiết"
+    echo "    13) Cleanup & Maintenance             - Dọn dẹp hệ thống và tối ưu"
+    echo "    14) Backup Management                 - Quản lý backup và restore"
+    echo "    15) Configuration Management         - Quản lý file cấu hình"
+    echo "    16) Security Hardening               - Cấu hình bảo mật hệ thống"
     echo ""
     echo "   📚 Help & Documentation:"
-    echo "     17) Show Help"
-    echo "     18) Show Configuration"
-    echo "     19) Show System Status"
+    echo "    17) Show Help                        - Hướng dẫn sử dụng chi tiết"
+    echo "    18) Show Configuration               - Hiển thị cấu hình hiện tại"
+    echo "    19) Show System Status               - Kiểm tra trạng thái services"
     echo ""
     echo "   🔄 Maintenance:"
-    echo "     20) Update System"
-    echo "     21) Fix Broken Dependencies"
-    echo "     22) Remove Unnecessary Files"
+    echo "    20) Update System                    - Cập nhật packages hệ thống"
+    echo "    21) Fix Broken Dependencies          - Sửa lỗi package dependencies"
+    echo "    22) Remove Unnecessary Files         - Dọn dẹp file không cần thiết"
     echo ""
-    echo "   0) Exit"
+    echo "     0) Exit                             - Thoát khỏi Ubuntu Development Setup"
     echo ""
 }
 
@@ -368,7 +379,6 @@ show_help() {
     echo "📖 Usage Tips:"
     echo "   • Always backup important data before running scripts"
     echo "   • Check system requirements before installation"
-    echo "   • Review logs for troubleshooting: $LOG_DIR/utool.log"
     echo "   • Use staging environments for testing"
     echo ""
     echo "🚨 Important Notes:"
@@ -378,7 +388,6 @@ show_help() {
     echo "   • Services will be automatically started"
     echo ""
     echo "🐛 Troubleshooting:"
-    echo "   • Check logs: tail -f $LOG_DIR/utool.log"
     echo "   • Verify internet connection"
     echo "   • Ensure sufficient disk space"
     echo "   • Check Ubuntu version compatibility"
@@ -477,14 +486,11 @@ show_system_status() {
     
     # Check recent logs
     echo ""
-    echo "📋 Recent System Logs:"
-    echo "====================="
-    if [[ -f "$LOG_DIR/utool.log" ]]; then
-        echo "Last 5 utool log entries:"
-        tail -5 "$LOG_DIR/utool.log"
-    else
-        echo "No utool logs found"
-    fi
+    echo "📋 Recent System Status:"
+    echo "======================="
+    echo "System uptime: $(uptime -p)"
+    echo "Available disk space: $(df -h / | tail -1 | awk '{print $4}')"
+    echo "Memory usage: $(free -h | grep '^Mem' | awk '{print $3 "/" $2}')"
 }
 
 # Function for security hardening
@@ -680,8 +686,7 @@ main() {
                 log "INFO" "Exiting Ubuntu 22 Development Environment Setup"
                 echo ""
                 echo "👋 Thank you for using the enhanced development toolkit!"
-                echo "💡 Remember to check logs at: $LOG_DIR/utool.log"
-                echo "🔄 Regular maintenance recommended weekly"
+                echo " Regular maintenance recommended weekly"
                 echo ""
                 # Return to original directory
                 if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then

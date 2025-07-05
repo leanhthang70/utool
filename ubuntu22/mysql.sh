@@ -7,19 +7,25 @@
 ORIGINAL_DIR="$(pwd)"
 export ORIGINAL_DIR
 
-# Source common functions
-source "$(dirname "$0")/common.sh"
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common functions with error checking
+COMMON_FILE="$SCRIPT_DIR/common.sh"
+if [[ -f "$COMMON_FILE" ]]; then
+    source "$COMMON_FILE"
+else
+    echo "Error: Cannot find common.sh at $COMMON_FILE"
+    echo "Current directory: $(pwd)"
+    echo "Script directory: $SCRIPT_DIR"
+    exit 1
+fi
 
 # Script configuration
 SCRIPT_NAME="MySQL/MariaDB Management"
 MARIADB_VERSION="11.4.2"
 MYSQL_CONF_FILE="/etc/mysql/my.cnf"
 BACKUP_DIR="${BACKUP_DIR:-/opt/backups/mysql}"
-
-# Print header
-echo "================================================================"
-echo "              🗄️  $SCRIPT_NAME (Enhanced)"
-echo "================================================================"
 
 # Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
@@ -45,21 +51,33 @@ validate_credentials() {
 show_menu() {
     echo ""
     echo "📋 Available Options:"
-    echo "   1) Install MariaDB"
-    echo "   2) Create Database"
-    echo "   3) Drop Database"
-    echo "   4) Create User"
-    echo "   5) Delete User"
-    echo "   6) Change Password"
-    echo "   7) Backup Database"
-    echo "   8) Restore Database"
-    echo "   9) Setup Replication (Master)"
-    echo "   10) Setup Replication (Slave)"
-    echo "   11) Show Database Status"
-    echo "   12) Optimize Database"
-    echo "   13) Security Configuration"
-    echo "   14) Performance Tuning"
-    echo "   0) Exit"
+    echo ""
+    echo "   🔧 Installation & Setup:"
+    echo "     1) Install MariaDB                    - Download và cài đặt MariaDB 11.4.2"
+    echo "     2) Check Installation Status          - Kiểm tra trạng thái cài đặt và service"
+    echo ""
+    echo "   🗄️  Database Management:"
+    echo "     3) Create Database                    - Tạo database mới với charset UTF8MB4"
+    echo "     4) Drop Database                      - Xóa database (cẩn thận!)"
+    echo ""
+    echo "   👥 User Management:"
+    echo "     5) Create User                        - Tạo user với quyền tùy chỉnh"
+    echo "     6) Delete User                        - Xóa user khỏi hệ thống"
+    echo "     7) Change Password                    - Đổi mật khẩu user"
+    echo ""
+    echo "   💾 Backup & Restore:"
+    echo "     8) Backup Database                    - Sao lưu database ra file .sql.gz"
+    echo "     9) Restore Database                   - Khôi phục database từ backup"
+    echo ""
+    echo "   🔄 Advanced Features:"
+    echo "    10) Setup Replication (Master)        - Cấu hình Master-Slave replication"
+    echo "    11) Setup Replication (Slave)         - Cấu hình Slave server"
+    echo "    12) Show Database Status               - Hiển thị thông tin databases và users"
+    echo "    13) Optimize Database                  - Tối ưu hóa performance database"
+    echo "    14) Security Configuration            - Cấu hình bảo mật nâng cao"
+    echo "    15) Performance Tuning                - Điều chỉnh hiệu suất MySQL"
+    echo ""
+    echo "     0) Exit                              - Thoát khỏi MySQL Management"
     echo ""
 }
 
@@ -70,32 +88,74 @@ install_mariadb() {
     # Check if MariaDB is already installed
     if command -v mariadb &> /dev/null; then
         warning "MariaDB is already installed"
+        local current_version=$(mariadb --version | cut -d' ' -f3 | cut -d'-' -f1)
+        echo "Current version: $current_version"
         if ! prompt_yes_no "Continue with configuration?" "y"; then
             return 0
         fi
     fi
     
+    # Check for existing MariaDB repository configuration
+    if [[ -f "/etc/apt/sources.list.d/mariadb.list" ]]; then
+        if ! handle_repository_conflicts; then
+            return 1
+        fi
+    fi
+    
     # Install MariaDB repository
+    show_progress "Setting up MariaDB repository"
     if ! curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --mariadb-server-version="$MARIADB_VERSION"; then
         error_exit "Failed to setup MariaDB repository"
     fi
+    success "MariaDB repository setup completed"
     
     # Update package lists
-    sudo apt update
+    show_progress "Updating package lists"
+    sudo apt update -q
     
     # Install MariaDB packages
+    show_progress "Installing MariaDB packages"
     sudo apt install -y mariadb-server mariadb-client libmysqlclient-dev
     
     # Enable and start MariaDB
+    show_progress "Starting MariaDB service"
     sudo systemctl enable mariadb
     sudo systemctl start mariadb
     
+    # Verify MariaDB is running
+    if ! sudo systemctl is-active mariadb &> /dev/null; then
+        error_exit "MariaDB failed to start"
+    fi
+    success "MariaDB service started successfully"
+    
     # Run secure installation
-    show_progress "Running MySQL secure installation"
-    sudo mysql_secure_installation
+    echo ""
+    warning "Please run the following secure installation steps:"
+    echo "1. Set root password (if not set)"
+    echo "2. Remove anonymous users: Y"
+    echo "3. Disallow root login remotely: Y"
+    echo "4. Remove test database: Y"
+    echo "5. Reload privilege tables: Y"
+    echo ""
+    if prompt_yes_no "Run MySQL secure installation now?" "y"; then
+        sudo mysql_secure_installation
+    fi
     
     # Configure MariaDB
-    configure_mariadb
+    if prompt_yes_no "Configure MariaDB with optimized settings?" "y"; then
+        configure_mariadb
+    fi
+    
+    # Show installation summary
+    echo ""
+    echo "📋 Installation Summary:"
+    echo "======================="
+    echo "• MariaDB Version: $(mariadb --version | cut -d' ' -f3 | cut -d'-' -f1)"
+    echo "• Service Status: $(systemctl is-active mariadb)"
+    echo "• Configuration File: $MYSQL_CONF_FILE"
+    echo "• Log Directory: /var/log/mysql/"
+    echo "• Data Directory: /var/lib/mysql/"
+    echo ""
     
     success "MariaDB installation completed successfully"
 }
@@ -214,124 +274,6 @@ EOF
     
     success "MariaDB configuration completed"
 }
-    
-    # Add MariaDB repository
-    curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | sudo bash -s -- --mariadb-server-version="$MARIADB_VERSION"
-    
-    # Update package list
-    sudo apt update -q
-    
-    # Install packages
-    install_package "libmysqlclient-dev"
-    install_package "mariadb-server"
-    install_package "mariadb-client"
-    
-    # Secure installation
-    if prompt_yes_no "Run mysql_secure_installation?" "y"; then
-        sudo mysql_secure_installation
-    fi
-    
-    # Configure port
-    local mysql_port
-    mysql_port=$(prompt_with_default "MySQL port" "$DEFAULT_MYSQL_PORT")
-    
-    # Backup original config
-    backup_file "$MYSQL_CONF_FILE"
-    
-    # Add port configuration
-    if ! grep -q "port = $mysql_port" "$MYSQL_CONF_FILE"; then
-        sudo sed -i "/^\[client-server\]/a port = $mysql_port" "$MYSQL_CONF_FILE"
-    fi
-    
-    # Show optimization recommendations
-    show_optimization_recommendations
-    
-    # Enable and start service
-    enable_service "mariadb"
-    
-    show_completion "MariaDB installation complete"
-}
-
-# Function to show optimization recommendations
-show_optimization_recommendations() {
-    echo ""
-    echo "📝 Optimization Recommendations:"
-    echo "   Add these configurations to $MYSQL_CONF_FILE under [mysqld] section:"
-    echo ""
-    echo "   # Memory settings"
-    echo "   innodb_buffer_pool_size = 70% of total RAM"
-    echo "   query_cache_size = 256MB"
-    echo "   innodb_log_buffer_size = 128MB"
-    echo "   tmp_table_size = 128MB"
-    echo ""
-    echo "   # Connection settings"
-    echo "   bind-address = 0.0.0.0"
-    echo "   max_connections = 500"
-    echo "   interactive_timeout = 300"
-    echo "   wait_timeout = 300"
-    echo "   thread_cache_size = 256"
-    echo ""
-    echo "   # InnoDB settings"
-    echo "   innodb_file_per_table = 1"
-    echo "   innodb_log_file_size = 512MB"
-    echo "   innodb_strict_mode = ON"
-    echo "   innodb_lock_wait_timeout = 120"
-    echo ""
-    echo "   # Character set"
-    echo "   character-set-server = utf8mb4"
-    echo "   character_set_client = utf8mb4"
-    echo "   collation-server = utf8mb4_general_ci"
-    echo ""
-    
-    if prompt_yes_no "Apply recommended optimizations automatically?" "y"; then
-        apply_optimizations
-    fi
-}
-
-# Function to apply optimizations
-apply_optimizations() {
-    show_progress "Applying MySQL optimizations"
-    
-    # Get total RAM in GB
-    local total_ram_gb=$(free -g | awk '/^Mem:/{print $2}')
-    local buffer_pool_size=$((total_ram_gb * 70 / 100))
-    
-    # Create optimization config
-    local optimization_config="
-# MySQL Optimization - Added by utool
-[mysqld]
-# Memory settings
-innodb_buffer_pool_size = ${buffer_pool_size}G
-query_cache_size = 256MB
-innodb_log_buffer_size = 128MB
-tmp_table_size = 128MB
-
-# Connection settings
-bind-address = 0.0.0.0
-max_connections = 500
-interactive_timeout = 300
-wait_timeout = 300
-thread_cache_size = 256
-
-# InnoDB settings
-innodb_file_per_table = 1
-innodb_log_file_size = 512MB
-innodb_strict_mode = ON
-innodb_lock_wait_timeout = 120
-
-# Character set
-character-set-server = utf8mb4
-character_set_client = utf8mb4
-collation-server = utf8mb4_general_ci"
-    
-    # Append to config file
-    echo "$optimization_config" | sudo tee -a "$MYSQL_CONF_FILE" > /dev/null
-    
-    # Restart service
-    sudo systemctl restart mariadb
-    
-    show_completion "Optimizations applied"
-}
 
 # Function to create database
 create_database() {
@@ -352,7 +294,7 @@ create_database() {
     # Create database
     local query="CREATE DATABASE IF NOT EXISTS \`$db_name\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
     
-    if execute_mysql_query "$root_user" "$root_password" "$query"; then
+    if mysql --user="$root_user" --password="$root_password" -e "$query" 2>/dev/null; then
         success "Database '$db_name' created successfully"
     else
         error_exit "Failed to create database '$db_name'"
@@ -384,7 +326,7 @@ drop_database() {
     # Drop database
     local query="DROP DATABASE IF EXISTS \`$db_name\`;"
     
-    if execute_mysql_query "$root_user" "$root_password" "$query"; then
+    if mysql --user="$root_user" --password="$root_password" -e "$query" 2>/dev/null; then
         success "Database '$db_name' dropped successfully"
     else
         error_exit "Failed to drop database '$db_name'"
@@ -462,7 +404,7 @@ create_user() {
     )
     
     for query in "${queries[@]}"; do
-        if ! execute_mysql_query "$root_user" "$root_password" "$query"; then
+        if ! mysql --user="$root_user" --password="$root_password" -e "$query" 2>/dev/null; then
             error_exit "Failed to create user '$username'"
         fi
     done
@@ -530,7 +472,7 @@ restore_database() {
     
     # Create database if it doesn't exist
     local create_query="CREATE DATABASE IF NOT EXISTS \`$target_db\` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
-    execute_mysql_query "$root_user" "$root_password" "$create_query"
+    mysql --user="$root_user" --password="$root_password" -e "$create_query" 2>/dev/null
     
     # Restore from backup
     if [[ "$backup_file" == *.gz ]]; then
@@ -566,34 +508,159 @@ show_database_status() {
     
     # Show databases
     echo "📋 Databases:"
-    execute_mysql_query "$root_user" "$root_password" "SHOW DATABASES;" | grep -v "Database\|information_schema\|performance_schema\|mysql\|sys"
+    mysql --user="$root_user" --password="$root_password" -e "SHOW DATABASES;" 2>/dev/null | grep -v "Database\|information_schema\|performance_schema\|mysql\|sys"
     
     echo ""
     echo "👥 Users:"
-    execute_mysql_query "$root_user" "$root_password" "SELECT User, Host FROM mysql.user WHERE User != '';"
+    mysql --user="$root_user" --password="$root_password" -e "SELECT User, Host FROM mysql.user WHERE User != '';" 2>/dev/null
     
     echo ""
     echo "🔄 Process List:"
-    execute_mysql_query "$root_user" "$root_password" "SHOW PROCESSLIST;"
+    mysql --user="$root_user" --password="$root_password" -e "SHOW PROCESSLIST;" 2>/dev/null
     
     echo ""
     echo "📈 Status Variables:"
-    execute_mysql_query "$root_user" "$root_password" "SHOW STATUS LIKE 'Connections';"
-    execute_mysql_query "$root_user" "$root_password" "SHOW STATUS LIKE 'Uptime';"
-    execute_mysql_query "$root_user" "$root_password" "SHOW STATUS LIKE 'Threads_connected';"
+    mysql --user="$root_user" --password="$root_password" -e "SHOW STATUS LIKE 'Connections';" 2>/dev/null
+    mysql --user="$root_user" --password="$root_password" -e "SHOW STATUS LIKE 'Uptime';" 2>/dev/null
+    mysql --user="$root_user" --password="$root_password" -e "SHOW STATUS LIKE 'Threads_connected';" 2>/dev/null
 }
 
-# Function to execute MySQL query
-execute_mysql_query() {
-    local user="$1"
-    local password="$2"
-    local query="$3"
+# Function to check MariaDB installation status
+check_installation_status() {
+    echo ""
+    echo "🔍 MariaDB Installation Status:"
+    echo "==============================="
     
-    mysql --user="$user" --password="$password" -e "$query" 2>/dev/null
+    # Check if MariaDB is installed
+    if command -v mariadb &> /dev/null; then
+        echo "• MariaDB Binary: ✅ Installed"
+        echo "• Version: $(mariadb --version | cut -d' ' -f3 | cut -d'-' -f1)"
+    else
+        echo "• MariaDB Binary: ❌ Not installed"
+        return 1
+    fi
+    
+    # Check service status
+    local service_status=$(systemctl is-active mariadb 2>/dev/null)
+    case "$service_status" in
+        "active") echo "• Service Status: ✅ Running" ;;
+        "inactive") echo "• Service Status: ⚠️ Stopped" ;;
+        "failed") echo "• Service Status: ❌ Failed" ;;
+        *) echo "• Service Status: ❓ Unknown" ;;
+    esac
+    
+    # Check if service is enabled
+    local enabled_status=$(systemctl is-enabled mariadb 2>/dev/null)
+    case "$enabled_status" in
+        "enabled") echo "• Auto-start: ✅ Enabled" ;;
+        "disabled") echo "• Auto-start: ⚠️ Disabled" ;;
+        *) echo "• Auto-start: ❓ Unknown" ;;
+    esac
+    
+    # Check configuration file
+    if [[ -f "$MYSQL_CONF_FILE" ]]; then
+        echo "• Configuration: ✅ $MYSQL_CONF_FILE"
+    else
+        echo "• Configuration: ⚠️ Not found"
+    fi
+    
+    # Check data directory
+    if [[ -d "/var/lib/mysql" ]]; then
+        local db_count=$(sudo ls /var/lib/mysql/ | grep -v ".*\.pid\|.*\.sock" | wc -l)
+        echo "• Data Directory: ✅ /var/lib/mysql ($db_count databases)"
+    else
+        echo "• Data Directory: ❌ Not found"
+    fi
+    
+    # Check repository
+    if [[ -f "/etc/apt/sources.list.d/mariadb.list" ]]; then
+        echo "• Repository: ✅ Configured"
+    else
+        echo "• Repository: ⚠️ Not configured"
+    fi
+    
+    echo ""
+}
+
+# Function to handle repository conflicts
+handle_repository_conflicts() {
+    local repo_file="/etc/apt/sources.list.d/mariadb.list"
+    
+    if [[ -f "$repo_file" ]]; then
+        echo ""
+        echo "⚠️  Repository Conflict Detected:"
+        echo "================================="
+        echo "Found existing MariaDB repository configuration."
+        echo "This can cause conflicts during installation."
+        echo ""
+        echo "Options:"
+        echo "1) Remove existing repository and continue"
+        echo "2) Keep existing repository (may cause conflicts)"
+        echo "3) Show existing repository content"
+        echo "4) Cancel installation"
+        echo ""
+        
+        while true; do
+            read -p "Choose option (1-4): " repo_choice
+            case "$repo_choice" in
+                1)
+                    show_progress "Removing existing repository configuration"
+                    sudo rm -f "$repo_file"*
+                    success "Repository configuration removed"
+                    return 0
+                    ;;
+                2)
+                    warning "Keeping existing repository - installation may fail"
+                    return 0
+                    ;;
+                3)
+                    echo ""
+                    echo "📄 Current repository content:"
+                    echo "=============================="
+                    sudo cat "$repo_file"
+                    echo ""
+                    ;;
+                4)
+                    echo "Installation cancelled by user"
+                    return 1
+                    ;;
+                *)
+                    warning "Invalid option. Please choose 1-4."
+                    ;;
+            esac
+        done
+    fi
+    
+    return 0
+}
+
+# Function to cleanup after failed installation
+cleanup_failed_installation() {
+    warning "Cleaning up after failed installation..."
+    
+    # Stop MariaDB service if running
+    sudo systemctl stop mariadb 2>/dev/null || true
+    
+    # Remove packages
+    sudo apt remove --purge mariadb-server mariadb-client mariadb-common -y 2>/dev/null || true
+    
+    # Remove repository
+    sudo rm -f /etc/apt/sources.list.d/mariadb.list* 2>/dev/null || true
+    
+    # Clean package cache
+    sudo apt autoremove -y
+    sudo apt autoclean
+    
+    warning "Cleanup completed. You can try installation again."
 }
 
 # Main function
 main() {
+    # Print header
+    echo "================================================================"
+    echo "              🗄️  $SCRIPT_NAME (Enhanced)"
+    echo "================================================================"
+    
     log "INFO" "Starting MySQL/MariaDB management"
     
     while true; do
@@ -602,33 +669,40 @@ main() {
         
         case "$choice" in
             1) install_mariadb ;;
-            2) create_database ;;
-            3) drop_database ;;
-            4) create_user ;;
-            5) 
+            2) check_installation_status ;;
+            3) create_database ;;
+            4) drop_database ;;
+            5) create_user ;;
+            6) 
                 log "INFO" "User deletion feature - coming soon"
                 ;;
-            6) 
+            7) 
                 log "INFO" "Password change feature - coming soon"
                 ;;
-            7) backup_database ;;
-            8) restore_database ;;
-            9) 
-                log "INFO" "Replication setup - coming soon"
-                ;;
+            8) backup_database ;;
+            9) restore_database ;;
             10) 
                 log "INFO" "Replication setup - coming soon"
                 ;;
-            11) show_database_status ;;
-            12) 
+            11) 
+                log "INFO" "Database status feature - coming soon"
+                ;;
+            12) show_database_status ;;
+            13) 
                 log "INFO" "Database optimization - coming soon"
+                ;;
+            14) 
+                log "INFO" "Security configuration feature - coming soon"
+                ;;
+            15) 
+                log "INFO" "Performance tuning feature - coming soon"
                 ;;
             0) 
                 log "INFO" "Exiting MySQL/MariaDB management"
                 exit 0
                 ;;
             *) 
-                warning "Invalid option. Please choose 0-12."
+                warning "Invalid option. Please choose 0-15."
                 ;;
         esac
         

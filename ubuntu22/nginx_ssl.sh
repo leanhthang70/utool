@@ -7,8 +7,19 @@
 ORIGINAL_DIR="$(pwd)"
 export ORIGINAL_DIR
 
-# Source common functions
-source "$(dirname "$0")/common.sh"
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common functions with error checking
+COMMON_FILE="$SCRIPT_DIR/common.sh"
+if [[ -f "$COMMON_FILE" ]]; then
+    source "$COMMON_FILE"
+else
+    echo "Error: Cannot find common.sh at $COMMON_FILE"
+    echo "Current directory: $(pwd)"
+    echo "Script directory: $SCRIPT_DIR"
+    exit 1
+fi
 
 # Script configuration
 SCRIPT_NAME="Nginx SSL Setup"

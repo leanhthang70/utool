@@ -42,17 +42,23 @@ find "$SCRIPT_DIR" -name "*.temp" -type f -delete
 print_status "Removing empty directories..."
 find "$SCRIPT_DIR" -type d -empty -delete 2>/dev/null || true
 
-# Remove logs older than 30 days
-if [[ -d "/var/log/utool" ]]; then
+# Remove logs older than 30 days (only if log directory exists)
+if [[ -d "/tmp/utool_logs" ]]; then
     print_status "Cleaning old log files..."
-    find /var/log/utool -name "*.log" -type f -mtime +30 -delete 2>/dev/null || true
+    find /tmp/utool_logs -name "*.log" -type f -mtime +7 -delete 2>/dev/null || true
 fi
 
 # Remove old backups
-if [[ -d "/opt/backups" ]]; then
+if [[ -d "/tmp/utool_backups" ]]; then
     print_status "Cleaning old backup files..."
-    find /opt/backups -type f -mtime +30 -delete 2>/dev/null || true
+    find /tmp/utool_backups -type f -mtime +7 -delete 2>/dev/null || true
 fi
+
+# Clean temporary utool directories
+print_status "Cleaning temporary utool directories..."
+rm -rf /tmp/utool_logs/* 2>/dev/null || true
+rm -rf /tmp/utool_backups/* 2>/dev/null || true
+rm -rf /tmp/utool/* 2>/dev/null || true
 
 # Fix permissions
 print_status "Fixing file permissions..."
@@ -67,11 +73,12 @@ echo ""
 echo "📊 Summary:"
 echo "• Removed backup files"
 echo "• Removed temporary files"
-echo "• Cleaned old logs"
+echo "• Cleaned temporary directories"
 echo "• Fixed file permissions"
 echo "• Removed empty directories"
 echo ""
 echo "💡 Your utool directory is now optimized!"
+echo "🗑️  Note: Log files are disabled to reduce clutter"
 
 # Return to original directory
 cd "$ORIGINAL_DIR"

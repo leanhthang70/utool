@@ -22,8 +22,18 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Create necessary directories
-mkdir -p "$LOG_DIR" "$BACKUP_DIR" "$TEMP_DIR"
+# Create necessary directories with proper permissions
+if [[ ! -d "$TEMP_DIR" ]]; then
+    mkdir -p "$TEMP_DIR"
+fi
+
+if [[ "$LOG_TO_FILE" == "true" && ! -d "$LOG_DIR" ]]; then
+    mkdir -p "$LOG_DIR"
+fi
+
+if [[ ! -d "$BACKUP_DIR" ]]; then
+    mkdir -p "$BACKUP_DIR"
+fi
 
 # Logging function
 log() {
@@ -51,27 +61,42 @@ log() {
     fi
 }
 
-# Error handling
-error_exit() {
-    log "ERROR" "$1"
-    exit 1
+# Function to show progress
+show_progress() {
+    local message="$1"
+    echo -e "${BLUE}⏳ $message...${NC}"
+    log "INFO" "$message"
 }
 
-# Success message
+# Function to show success message
 success() {
-    log "INFO" "$1"
+    local message="$1"
+    echo -e "${GREEN}✅ $message${NC}"
+    log "INFO" "SUCCESS: $message"
 }
 
-# Warning message
+# Function to show warning message
 warning() {
-    log "WARN" "$1"
+    local message="$1"
+    echo -e "${YELLOW}⚠️ $message${NC}"
+    log "WARN" "$message"
 }
 
-# Debug message
+# Function to show debug message
 debug() {
+    local message="$1"
     if [[ "$LOG_LEVEL" == "DEBUG" ]]; then
-        log "DEBUG" "$1"
+        echo -e "${BLUE}🔍 $message${NC}"
     fi
+    log "DEBUG" "$message"
+}
+
+# Function to show error and exit
+error_exit() {
+    local message="$1"
+    echo -e "${RED}❌ $message${NC}"
+    log "ERROR" "$message"
+    exit 1
 }
 
 # Check if script is run as root
@@ -235,16 +260,13 @@ validate_email() {
     fi
 }
 
-# Show progress
-show_progress() {
-    local message="$1"
-    echo -e "${BLUE}⏳ $message...${NC}"
-}
-
 # Show completion
 show_completion() {
     local message="$1"
-    echo -e "${GREEN}✅ $message${NC}"
+    echo ""
+    echo -e "${GREEN}🎉 $message${NC}"
+    echo ""
+    log "INFO" "COMPLETED: $message"
 }
 
 # Cleanup function

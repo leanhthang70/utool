@@ -1,4 +1,4 @@
-# Ubuntu 22 Development Environment Setup
+# Ubuntu 22 Development Environment Setup - Enhanced Version
 
 ## 📋 Tổng quan
 

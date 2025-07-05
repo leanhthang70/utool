@@ -1,17 +1,62 @@
 #!/bin/bash
 
+# PostgreSQL 16 Management Script
+# Provides comprehensive PostgreSQL management with proper error handling
+
 # Save original directory
 ORIGINAL_DIR="$(pwd)"
+export ORIGINAL_DIR
 
-echo "1) Install PostgreSQL 16 "
-echo "21) Create database "
-echo "22) Drop database "
-echo "31) Create user "
-echo "32) Delete user "
-echo "4) Change password "
-echo "5) Backup database "
-echo "6) Restore database "
-echo "Enter to exit (q/quit/exit/0)"
+# Get script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source common functions with error checking
+COMMON_FILE="$SCRIPT_DIR/common.sh"
+if [[ -f "$COMMON_FILE" ]]; then
+    source "$COMMON_FILE"
+else
+    echo "Error: Cannot find common.sh at $COMMON_FILE"
+    echo "Current directory: $(pwd)"
+    echo "Script directory: $SCRIPT_DIR"
+    exit 1
+fi
+
+# Script configuration
+SCRIPT_NAME="PostgreSQL 16 Management"
+
+# Print header
+clear
+echo "================================================================"
+echo "       🐘 $SCRIPT_NAME"
+echo "================================================================"
+
+# Function to show menu
+show_menu() {
+    echo ""
+    echo "📋 Available Options:"
+    echo ""
+    echo "   🔧 Installation & Setup:"
+    echo "     1) Install PostgreSQL 16              - Cài đặt PostgreSQL 16 với remote access"
+    echo ""
+    echo "   🗄️  Database Management:"
+    echo "    21) Create Database                    - Tạo database mới với owner"
+    echo "    22) Drop Database                      - Xóa database (cẩn thận!)"
+    echo ""
+    echo "   👥 User Management:"
+    echo "    31) Create User                        - Tạo user với quyền tùy chỉnh"
+    echo "    32) Delete User                        - Xóa user khỏi PostgreSQL"
+    echo "     4) Change Password                    - Đổi mật khẩu user"
+    echo ""
+    echo "   💾 Backup & Restore:"
+    echo "     5) Backup Database                    - Sao lưu database ra file .sql"
+    echo "     6) Restore Database                   - Khôi phục database từ backup"
+    echo ""
+    echo "     0) Exit                              - Thoát khỏi PostgreSQL Management"
+    echo ""
+}
+
+# Show menu and get user choice
+show_menu
 read -p "=> Choose one option: " OPTION
 
 
