@@ -1,0 +1,33 @@
+# UTool .gitignore
+
+# Temporary files
+temp_file
+*.tmp
+*.log
+
+# Resource files (large binaries, downloads)
+resources/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# Compiled files
+*.o
+*.pyc
+__pycache__/
+
+# Local configuration
+.env
+config.local.*
