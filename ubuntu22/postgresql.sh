@@ -316,6 +316,7 @@ show_menu() {
     echo "     1) Install PostgreSQL $POSTGRESQL_VERSION              - Download và cài đặt PostgreSQL $POSTGRESQL_VERSION"
     echo "     2) Check Installation Status          - Kiểm tra trạng thái cài đặt và service"
     echo "    18) Select PostgreSQL Version         - Chọn phiên bản PostgreSQL khác"
+    echo "    19) Check Development Libraries        - Kiểm tra thư viện phát triển Rails"
     echo ""
     echo "   🗄️  Database Management:"
     echo "     3) Create Database                    - Tạo database mới với owner"
@@ -395,6 +396,11 @@ install_postgresql() {
     show_progress "Installing PostgreSQL packages"
     sudo apt install -y postgresql-$POSTGRESQL_VERSION postgresql-contrib-$POSTGRESQL_VERSION postgresql-client-$POSTGRESQL_VERSION
     
+    # Install development libraries for Rails compatibility
+    show_progress "Installing PostgreSQL development libraries"
+    sudo apt install -y libpq-dev postgresql-server-dev-$POSTGRESQL_VERSION build-essential
+    success "PostgreSQL development libraries installed for Rails compatibility"
+    
     # Enable and start PostgreSQL
     show_progress "Starting PostgreSQL service"
     sudo systemctl enable postgresql
@@ -426,6 +432,11 @@ install_postgresql() {
     echo "• HBA Configuration: $POSTGRESQL_HBA_FILE"
     echo "• Log Directory: /var/log/postgresql/"
     echo "• Data Directory: /var/lib/postgresql/$POSTGRESQL_VERSION/main/"
+    echo "• Development Libraries: ✅ Installed (libpq-dev, postgresql-server-dev)"
+    echo ""
+    echo "🎯 Rails Integration:"
+    echo "   • pg gem: ✅ Ready to install"
+    echo "   • Development headers: ✅ Available"
     echo ""
     
     success "PostgreSQL installation completed successfully"
@@ -799,6 +810,9 @@ check_installation_status() {
         echo "• Data Directory: ❌ Not found"
     fi
     
+    # Check development libraries
+    check_postgresql_dev_libs
+    
     echo ""
 }
 
@@ -946,6 +960,47 @@ get_postgresql_service_name() {
     fi
 }
 
+# Function to check if development libraries are installed
+check_postgresql_dev_libs() {
+    echo ""
+    echo "🔍 Checking PostgreSQL Development Libraries:"
+    echo "============================================="
+    
+    # Check libpq-dev
+    if dpkg -l | grep -q "libpq-dev"; then
+        echo "• libpq-dev: ✅ Installed"
+    else
+        echo "• libpq-dev: ❌ Missing"
+        echo "  Install with: sudo apt install libpq-dev"
+    fi
+    
+    # Check postgresql-server-dev
+    if dpkg -l | grep -q "postgresql-server-dev"; then
+        echo "• postgresql-server-dev: ✅ Installed"
+    else
+        echo "• postgresql-server-dev: ❌ Missing"
+        echo "  Install with: sudo apt install postgresql-server-dev-all"
+    fi
+    
+    # Check build-essential
+    if dpkg -l | grep -q "build-essential"; then
+        echo "• build-essential: ✅ Installed"
+    else
+        echo "• build-essential: ❌ Missing"
+        echo "  Install with: sudo apt install build-essential"
+    fi
+    
+    echo ""
+    echo "💎 Rails gem compatibility:"
+    if dpkg -l | grep -q "libpq-dev" && dpkg -l | grep -q "postgresql-server-dev" && dpkg -l | grep -q "build-essential"; then
+        echo "   ✅ pg gem can be installed successfully"
+    else
+        echo "   ❌ Missing libraries - pg gem installation may fail"
+        echo "   📋 Quick fix: sudo apt install libpq-dev postgresql-server-dev-all build-essential"
+    fi
+    echo ""
+}
+
 # Main function
 main() {
     # Initialize script title
@@ -999,12 +1054,13 @@ main() {
                 update_script_title
                 success "PostgreSQL version changed to $POSTGRESQL_VERSION"
                 ;;
+            19) check_postgresql_dev_libs ;;
             0) 
                 log "INFO" "Exiting PostgreSQL management"
                 exit 0
                 ;;
             *) 
-                warning "Invalid option. Please choose 0-18."
+                warning "Invalid option. Please choose 0-19."
                 ;;
         esac
         

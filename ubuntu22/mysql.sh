@@ -116,6 +116,7 @@ show_menu() {
     echo "     1) Install MariaDB $MARIADB_VERSION                - Download và cài đặt MariaDB $MARIADB_VERSION"
     echo "     2) Check Installation Status          - Kiểm tra trạng thái cài đặt và service"
     echo "    18) Select MariaDB Version             - Chọn phiên bản MariaDB khác"
+    echo "    19) Check Development Libraries        - Kiểm tra thư viện phát triển Rails"
     echo ""
     echo "   🗄️  Database Management:"
     echo "     3) Create Database                    - Tạo database mới với charset UTF8MB4"
@@ -201,6 +202,11 @@ install_mariadb() {
     show_progress "Installing MariaDB packages"
     sudo apt install -y mariadb-server mariadb-client libmysqlclient-dev
     
+    # Install development libraries for Rails compatibility
+    show_progress "Installing MySQL/MariaDB development libraries"
+    sudo apt install -y libmysqlclient-dev default-libmysqlclient-dev build-essential
+    success "MySQL/MariaDB development libraries installed for Rails compatibility"
+    
     # Enable and start MariaDB
     show_progress "Starting MariaDB service"
     sudo systemctl enable mariadb
@@ -239,6 +245,11 @@ install_mariadb() {
     echo "• Configuration File: $MYSQL_CONF_FILE"
     echo "• Log Directory: /var/log/mysql/"
     echo "• Data Directory: /var/lib/mysql/"
+    echo "• Development Libraries: ✅ Installed (libmysqlclient-dev, default-libmysqlclient-dev)"
+    echo ""
+    echo "🎯 Rails Integration:"
+    echo "   • mysql2 gem: ✅ Ready to install"
+    echo "   • Development headers: ✅ Available"
     echo ""
     
     success "MariaDB installation completed successfully"
@@ -1025,6 +1036,47 @@ connect_without_password() {
     echo ""
 }
 
+# Function to check if development libraries are installed
+check_mysql_dev_libs() {
+    echo ""
+    echo "🔍 Checking MySQL/MariaDB Development Libraries:"
+    echo "================================================"
+    
+    # Check libmysqlclient-dev
+    if dpkg -l | grep -q "libmysqlclient-dev"; then
+        echo "• libmysqlclient-dev: ✅ Installed"
+    else
+        echo "• libmysqlclient-dev: ❌ Missing"
+        echo "  Install with: sudo apt install libmysqlclient-dev"
+    fi
+    
+    # Check default-libmysqlclient-dev
+    if dpkg -l | grep -q "default-libmysqlclient-dev"; then
+        echo "• default-libmysqlclient-dev: ✅ Installed"
+    else
+        echo "• default-libmysqlclient-dev: ❌ Missing"
+        echo "  Install with: sudo apt install default-libmysqlclient-dev"
+    fi
+    
+    # Check build-essential
+    if dpkg -l | grep -q "build-essential"; then
+        echo "• build-essential: ✅ Installed"
+    else
+        echo "• build-essential: ❌ Missing"
+        echo "  Install with: sudo apt install build-essential"
+    fi
+    
+    echo ""
+    echo "💎 Rails gem compatibility:"
+    if dpkg -l | grep -q "libmysqlclient-dev" && dpkg -l | grep -q "build-essential"; then
+        echo "   ✅ mysql2 gem can be installed successfully"
+    else
+        echo "   ❌ Missing libraries - mysql2 gem installation may fail"
+        echo "   📋 Quick fix: sudo apt install libmysqlclient-dev default-libmysqlclient-dev build-essential"
+    fi
+    echo ""
+}
+
 # Function to get current installed MariaDB version
 get_current_mariadb_version() {
     if command -v mariadb &> /dev/null; then
@@ -1092,12 +1144,13 @@ main() {
                 update_script_title
                 success "MariaDB version changed to $MARIADB_VERSION"
                 ;;
+            19) check_mysql_dev_libs ;;
             0|q) 
                 log "INFO" "Exiting MySQL/MariaDB management"
                 exit 0
                 ;;
             *) 
-                warning "Invalid option. Please choose 0-18."
+                warning "Invalid option. Please choose 0-19."
                 ;;
         esac
         
