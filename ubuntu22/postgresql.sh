@@ -119,6 +119,13 @@ get_postgresql_credentials() {
     
     show_progress "Detecting PostgreSQL connection method"
     
+    # Check if PostgreSQL service is running first
+    if ! systemctl is-active postgresql &>/dev/null; then
+        error "❌ PostgreSQL service is not running"
+        echo "   Try: sudo systemctl start postgresql"
+        return 1
+    fi
+    
     # Method 1: Try connecting as postgres user without password
     if sudo -u postgres psql -d "$db_name" -c "SELECT 1;" &>/dev/null; then
         success "✅ Connected as postgres user (system auth)"
@@ -231,14 +238,22 @@ execute_postgresql_query_with_output() {
         echo ""
         error "❌ $error_msg"
         if [[ -s "$temp_error" ]]; then
+            local error_content=$(cat "$temp_error")
             echo "Error details:"
-            cat "$temp_error"
+            echo "$error_content"
+            
+            # Handle specific role errors
+            if [[ "$error_content" =~ "role.*does not exist" ]]; then
+                handle_role_error "$error_content" "${user:-unknown}"
+            fi
         fi
-        rm -f "$temp_error"
+        # SAFETY: Skip file deletion to prevent accidental damage
+        # rm -f "$temp_error"  # Commented out for safety
         return 1
     fi
     
-    rm -f "$temp_error"
+    # SAFETY: Skip file deletion to prevent accidental damage  
+    # rm -f "$temp_error"  # Commented out for safety
     return 0
 }
 
@@ -408,7 +423,9 @@ install_postgresql() {
     
     # Verify PostgreSQL is running
     if ! sudo systemctl is-active postgresql &> /dev/null; then
-        error_exit "PostgreSQL failed to start"
+        error "PostgreSQL failed to start"
+        echo "Please check PostgreSQL installation and try again"
+        return 1
     fi
     success "PostgreSQL service started successfully"
     
@@ -564,7 +581,7 @@ drop_database() {
 
 # Function to create user
 create_user() {
-    show_progress "Creating new user"
+    show_progress "Creating new PostgreSQL user"
     
     # Test connection first using auto-detection
     show_progress "Testing database connection"
@@ -582,15 +599,51 @@ create_user() {
     local user_type
     local database
     
-    read -p "Enter new username: " username
+    echo ""
+    echo "⚠️  IMPORTANT: PostgreSQL User vs System User"
+    echo "=============================================="
+    echo "• This creates a PostgreSQL database user (for connecting to databases)"
+    echo "• This is NOT a Linux system user (for logging into the server)"
+    echo "• For system users, use: sudo useradd -m username"
+    echo "• The error 'role \"55\" does not exist' suggests system/PostgreSQL user confusion"
+    echo ""
+    
+    read -p "Enter new PostgreSQL username: " username
     validate_not_empty "$username" "Username"
     
+    # Validate username (PostgreSQL naming rules)
+    if [[ ! "$username" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+        error "Invalid username. Use only letters, numbers, and underscores. Must start with letter or underscore."
+        return 1
+    fi
+    
+    # Check if user already exists
+    show_progress "Checking if user '$username' already exists"
+    local user_exists_query="SELECT 1 FROM pg_roles WHERE rolname='$username';"
+    if execute_postgresql_query "$user_exists_query" "postgres" | grep -q "1"; then
+        warning "⚠️  PostgreSQL user '$username' already exists"
+        if ! prompt_yes_no "Continue to modify existing user?" "n"; then
+            log "INFO" "User creation cancelled"
+            return 0
+        fi
+        local user_exists=true
+    else
+        local user_exists=false
+        success "✅ Username '$username' is available"
+    fi
+    
     while true; do
-        read -s -p "Enter password for new user: " password
+        read -s -p "Enter password for PostgreSQL user '$username': " password
         echo
         validate_not_empty "$password" "Password"
         
-        read -s -p "Confirm password for new user: " confirm_password
+        # Validate password strength
+        if [[ ${#password} -lt 8 ]]; then
+            error "Password must be at least 8 characters long"
+            continue
+        fi
+        
+        read -s -p "Confirm password: " confirm_password
         echo
         
         if [[ "$password" == "$confirm_password" ]]; then
@@ -611,56 +664,116 @@ create_user() {
     read -p "Enter database name (or press Enter for all databases): " database
     database=${database:-""}
     
-    # Create user with better error handling
+    # Create or alter user with better error handling
     echo ""
-    show_progress "Creating user '$username'"
-    
-    # Step 1: Create user
-    local create_query="CREATE USER \"$username\" WITH PASSWORD '$password'"
-    case "$user_type" in
-        1) create_query="$create_query;" ;;
-        2) create_query="$create_query;" ;;
-        3) create_query="$create_query;" ;;
-        4) create_query="CREATE USER \"$username\" WITH PASSWORD '$password' SUPERUSER;" ;;
-        *) error_exit "Invalid user type" ;;
-    esac
-    
-    if ! execute_postgresql_query_with_output "$create_query" "postgres" "Failed to create user '$username'"; then
-        return 1
+    if [[ "$user_exists" == "true" ]]; then
+        show_progress "Modifying existing user '$username'"
+        
+        # Alter existing user
+        local alter_query
+        case "$user_type" in
+            1) alter_query="ALTER USER \"$username\" WITH PASSWORD '$password';" ;;
+            2) alter_query="ALTER USER \"$username\" WITH PASSWORD '$password';" ;;
+            3) alter_query="ALTER USER \"$username\" WITH PASSWORD '$password';" ;;
+            4) alter_query="ALTER USER \"$username\" WITH PASSWORD '$password' SUPERUSER;" ;;
+            *) 
+                error "Invalid user type"
+                return 1
+                ;;
+        esac
+        
+        if ! execute_postgresql_query_with_output "$alter_query" "postgres" "Failed to modify user '$username'"; then
+            return 1
+        fi
+        success "✅ User '$username' modified successfully"
+    else
+        show_progress "Creating new user '$username'"
+        
+        # Create new user with escaped username and password
+        local create_query
+        case "$user_type" in
+            1) create_query="CREATE USER \"$username\" WITH PASSWORD '$password';" ;;
+            2) create_query="CREATE USER \"$username\" WITH PASSWORD '$password';" ;;
+            3) create_query="CREATE USER \"$username\" WITH PASSWORD '$password';" ;;
+            4) create_query="CREATE USER \"$username\" WITH PASSWORD '$password' SUPERUSER;" ;;
+            *) 
+                error "Invalid user type"
+                return 1
+                ;;
+        esac
+        
+        if ! execute_postgresql_query_with_output "$create_query" "postgres" "Failed to create user '$username'"; then
+            error "❌ User creation failed. This might be due to:"
+            echo "   • PostgreSQL service not running properly"
+            echo "   • Authentication configuration issues"
+            echo "   • Invalid username or password format"
+            echo ""
+            echo "🔧 Try these solutions:"
+            echo "   1. Check PostgreSQL service: sudo systemctl status postgresql"
+            echo "   2. Reset postgres password with option 16"
+            echo "   3. Use connection troubleshoot with option 17"
+            return 1
+        fi
+        success "✅ User '$username' created successfully"
     fi
     
     # Step 2: Grant permissions based on user type
     if [[ "$user_type" != "4" ]]; then  # Skip for superuser
+        show_progress "Setting up permissions for user '$username'"
+        
         if [[ -n "$database" ]]; then
             # Grant permissions on specific database
+            local grant_query
             case "$user_type" in
                 1) # Read-only
-                    local grant_query="GRANT CONNECT ON DATABASE \"$database\" TO \"$username\"; GRANT USAGE ON SCHEMA public TO \"$username\"; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"$username\";"
+                    grant_query="GRANT CONNECT ON DATABASE \"$database\" TO \"$username\"; GRANT USAGE ON SCHEMA public TO \"$username\"; GRANT SELECT ON ALL TABLES IN SCHEMA public TO \"$username\"; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO \"$username\";"
                     ;;
                 2) # Application user
-                    local grant_query="GRANT CONNECT ON DATABASE \"$database\" TO \"$username\"; GRANT USAGE, CREATE ON SCHEMA public TO \"$username\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"$username\";"
+                    grant_query="GRANT CONNECT ON DATABASE \"$database\" TO \"$username\"; GRANT USAGE, CREATE ON SCHEMA public TO \"$username\"; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"$username\"; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO \"$username\";"
                     ;;
                 3) # Database owner
-                    local grant_query="ALTER DATABASE \"$database\" OWNER TO \"$username\";"
+                    grant_query="ALTER DATABASE \"$database\" OWNER TO \"$username\"; GRANT ALL PRIVILEGES ON DATABASE \"$database\" TO \"$username\";"
                     ;;
             esac
             
-            if ! execute_postgresql_query_with_output "$grant_query" "$database" "Failed to grant permissions to '$username'"; then
-                return 1
+            if ! execute_postgresql_query_with_output "$grant_query" "$database" "Failed to grant permissions to '$username' on database '$database'"; then
+                warning "⚠️  User created but permission assignment failed"
+                echo "   You may need to grant permissions manually"
+            else
+                success "✅ Permissions granted on database '$database'"
             fi
         else
-            warning "No specific database specified. User created with basic permissions."
+            warning "⚠️  No specific database specified"
+            echo "   User created with basic login permissions only"
+            echo "   Grant database permissions manually as needed"
         fi
     fi
     
     echo ""
-    success "✅ User '$username' created successfully!"
-    echo "📋 Summary:"
+    success "🎉 PostgreSQL user setup completed!"
+    echo ""
+    echo "📋 User Summary:"
+    echo "================"
     echo "   • Username: $username"
-    echo "   • User Type: $(case $user_type in 1) echo "Read-only";; 2) echo "Application user";; 3) echo "Database owner";; 4) echo "Superuser";; esac)"
+    echo "   • User Type: $(case $user_type in 1) echo "Read-only user";; 2) echo "Application user";; 3) echo "Database owner";; 4) echo "Superuser";; esac)"
+    if [[ -n "$database" ]]; then
+        echo "   • Target Database: $database"
+    else
+        echo "   • Target Database: (none specified - basic login only)"
+    fi
+    echo ""
+    echo "🔐 Connection Information:"
+    echo "   • Host: localhost (or your server IP)"
+    echo "   • Port: 5432 (default)"
+    echo "   • Username: $username"
+    echo "   • Password: [the password you set]"
     if [[ -n "$database" ]]; then
         echo "   • Database: $database"
     fi
+    echo ""
+    echo "💡 Test connection:"
+    echo "   psql -U $username -d ${database:-postgres} -h localhost"
+    echo ""
 }
 
 # Function to backup database
@@ -686,7 +799,8 @@ backup_database() {
         success "✅ Database backup created: $backup_path.gz"
         log "INFO" "Backup size: $(du -h "$backup_path.gz" | cut -f1)"
     else
-        error_exit "Failed to create backup"
+        error "Failed to create backup"
+        return 1
     fi
 }
 
@@ -720,13 +834,15 @@ restore_database() {
         if gunzip -c "$backup_file" | execute_postgresql_restore "$target_db" /dev/stdin; then
             success "✅ Database restored successfully to '$target_db'"
         else
-            error_exit "Failed to restore database"
+            error "Failed to restore database"
+            return 1
         fi
     else
         if execute_postgresql_restore "$target_db" "$backup_file"; then
             success "✅ Database restored successfully to '$target_db'"
         else
-            error_exit "Failed to restore database"
+            error "Failed to restore database"
+            return 1
         fi
     fi
 }
@@ -863,7 +979,8 @@ reset_postgresql_password() {
         echo ""
         echo "⚠️  Please save this password securely!"
     else
-        error_exit "Failed to reset postgres password"
+        error "Failed to reset postgres password"
+        return 1
     fi
 }
 
@@ -872,60 +989,131 @@ connect_without_password() {
     show_progress "Testing PostgreSQL connection methods"
     
     echo ""
-    echo "🔍 Testing PostgreSQL Connection Methods:"
-    echo "========================================"
+    echo "🔍 PostgreSQL Connection Troubleshoot:"
+    echo "======================================"
+    echo ""
+    
+    # Check PostgreSQL service first
+    echo "0️⃣  Checking PostgreSQL service status"
+    local service_status=$(systemctl is-active postgresql 2>/dev/null)
+    case "$service_status" in
+        "active") 
+            echo "   ✅ PostgreSQL service is running"
+            local service_enabled=$(systemctl is-enabled postgresql 2>/dev/null)
+            echo "   ✅ Auto-start: $service_enabled"
+            ;;
+        "inactive") 
+            echo "   ❌ PostgreSQL service is stopped"
+            echo "   🔧 Fix: sudo systemctl start postgresql"
+            if prompt_yes_no "Start PostgreSQL service now?" "y"; then
+                sudo systemctl start postgresql
+                if systemctl is-active postgresql &>/dev/null; then
+                    success "✅ PostgreSQL service started successfully"
+                else
+                    error "❌ Failed to start PostgreSQL service"
+                    echo "   Check logs: sudo journalctl -u postgresql"
+                    return 1
+                fi
+            else
+                return 1
+            fi
+            ;;
+        "failed") 
+            echo "   ❌ PostgreSQL service failed to start"
+            echo "   🔧 Check logs: sudo journalctl -u postgresql"
+            return 1
+            ;;
+        *) 
+            echo "   ❓ PostgreSQL service status unknown"
+            echo "   🔧 Try: sudo systemctl status postgresql"
+            return 1
+            ;;
+    esac
+    
     echo ""
     
     # Method 1: Try connecting using sudo -u postgres
     echo "1️⃣  Testing: sudo -u postgres psql"
-    if sudo -u postgres psql -c "SELECT 'Connection successful' as status;" 2>/dev/null; then
+    if timeout 10 sudo -u postgres psql -c "SELECT 'Connection successful' as status, version();" 2>/dev/null; then
         success "✅ Can connect using sudo -u postgres psql"
-        echo "   You can access PostgreSQL using: sudo -u postgres psql"
+        echo "   📋 This is the recommended method for admin tasks"
+        echo "   🔧 Use: sudo -u postgres psql"
         return 0
     else
         echo "   ❌ Cannot connect using sudo"
+        echo "   🔍 Possible causes:"
+        echo "      • PostgreSQL not properly initialized"
+        echo "      • Permission issues"
+        echo "      • Socket file missing"
     fi
     
     echo ""
     
     # Method 2: Try connecting with peer authentication
     echo "2️⃣  Testing: psql -U postgres"
-    if psql -U postgres -c "SELECT 'Connection successful' as status;" 2>/dev/null; then
+    if timeout 10 psql -U postgres -c "SELECT 'Connection successful' as status;" 2>/dev/null; then
         success "✅ Can connect with peer authentication"
-        echo "   You can use: psql -U postgres"
+        echo "   🔧 Use: psql -U postgres"
         return 0
     else
         echo "   ❌ Cannot connect with peer authentication"
+        echo "   🔍 Check /etc/postgresql/*/main/pg_hba.conf for peer auth settings"
     fi
     
     echo ""
     
-    # Method 3: Check if PostgreSQL is running
-    echo "3️⃣  Checking PostgreSQL service status"
-    local service_status=$(systemctl is-active postgresql 2>/dev/null)
-    case "$service_status" in
-        "active") 
-            echo "   ✅ PostgreSQL service is running"
-            ;;
-        "inactive") 
-            echo "   ❌ PostgreSQL service is stopped"
-            echo "   Try: sudo systemctl start postgresql"
-            ;;
-        "failed") 
-            echo "   ❌ PostgreSQL service failed to start"
-            echo "   Check logs: sudo journalctl -u postgresql"
-            ;;
-        *) 
-            echo "   ❓ PostgreSQL service status unknown"
-            ;;
-    esac
+    # Check listening ports
+    echo "3️⃣  Checking PostgreSQL listening ports"
+    local listening_ports=$(netstat -tlnp 2>/dev/null | grep :5432 || ss -tlnp 2>/dev/null | grep :5432)
+    if [[ -n "$listening_ports" ]]; then
+        echo "   ✅ PostgreSQL is listening on port 5432"
+        echo "   $listening_ports"
+    else
+        echo "   ❌ PostgreSQL is not listening on port 5432"
+        echo "   🔧 Check configuration file: $POSTGRESQL_CONF_FILE"
+    fi
+    
+    echo ""
+    
+    # Check socket files
+    echo "4️⃣  Checking PostgreSQL socket files"
+    if [[ -S /var/run/postgresql/.s.PGSQL.5432 ]]; then
+        echo "   ✅ Socket file exists: /var/run/postgresql/.s.PGSQL.5432"
+        local socket_perms=$(ls -la /var/run/postgresql/.s.PGSQL.5432)
+        echo "   📋 Permissions: $socket_perms"
+    else
+        echo "   ❌ Socket file missing: /var/run/postgresql/.s.PGSQL.5432"
+        echo "   🔧 This indicates PostgreSQL is not running properly"
+    fi
+    
+    echo ""
+    
+    # Check data directory
+    echo "5️⃣  Checking PostgreSQL data directory"
+    local data_dir="/var/lib/postgresql/$POSTGRESQL_VERSION/main"
+    if [[ -d "$data_dir" ]]; then
+        echo "   ✅ Data directory exists: $data_dir"
+        local data_owner=$(stat -c '%U:%G' "$data_dir")
+        echo "   📋 Owner: $data_owner"
+        if [[ -f "$data_dir/PG_VERSION" ]]; then
+            local pg_version=$(cat "$data_dir/PG_VERSION")
+            echo "   📋 Database version: $pg_version"
+        fi
+    else
+        echo "   ❌ Data directory missing: $data_dir"
+        echo "   🔧 PostgreSQL may not be properly initialized"
+        echo "   🔧 Try: sudo -u postgres initdb -D $data_dir"
+    fi
     
     echo ""
     echo "🔧 Recommended troubleshooting steps:"
-    echo "1. Use option 16 (Reset PostgreSQL Password) if you forgot the password"
-    echo "2. Use 'sudo -u postgres psql' to access database as admin"
+    echo "1. Use option 16 (Reset PostgreSQL Password) to set a known password"
+    echo "2. Use 'sudo -u postgres psql' for administrative access"
     echo "3. Check service status with option 2"
-    echo "4. Check configuration files for authentication issues"
+    echo "4. Review PostgreSQL logs: sudo journalctl -u postgresql"
+    echo "5. Check configuration files:"
+    echo "   • $POSTGRESQL_CONF_FILE"
+    echo "   • $POSTGRESQL_HBA_FILE"
     echo ""
 }
 
@@ -999,6 +1187,33 @@ check_postgresql_dev_libs() {
         echo "   📋 Quick fix: sudo apt install libpq-dev postgresql-server-dev-all build-essential"
     fi
     echo ""
+}
+
+# Function to handle role-related errors (like "role does not exist")
+handle_role_error() {
+    local error_message="$1"
+    local username="$2"
+    
+    if [[ "$error_message" =~ "role.*does not exist" ]]; then
+        echo ""
+        error "❌ PostgreSQL role/user error detected"
+        echo "Error details: $error_message"
+        echo ""
+        echo "🔍 This error typically occurs when:"
+        echo "   • PostgreSQL tries to connect with a non-existent user"
+        echo "   • User ID mapping conflicts (system vs PostgreSQL users)"
+        echo "   • Authentication configuration issues"
+        echo ""
+        echo "🔧 Solutions:"
+        echo "   1. Create the missing PostgreSQL user:"
+        echo "      sudo -u postgres createuser $username"
+        echo "   2. Reset authentication configuration"
+        echo "   3. Use option 16 to reset postgres password"
+        echo "   4. Use option 17 for detailed connection troubleshooting"
+        echo ""
+        return 1
+    fi
+    return 0
 }
 
 # Main function

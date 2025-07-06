@@ -74,14 +74,7 @@ if [ "$main_option" = "1" ]; then
         if [[ "$hostname_value" == *"github.com"* ]] || [[ "$hostname_value" == *"gitlab.com"* ]]; then
             default_user="git"
             echo "Detected Git hosting service. Using default user: git"
-            user_config="    User git"
-        else
-            read -p "=> Nhập User (Enter để bỏ qua): " input_user
-            if [ -n "$input_user" ]; then
-                user_config="    User $input_user"
-            fi
-        fi
-        
+            user_config="    User git"        
         if ! grep -q "^Host $host_name$" "$HOME/.ssh/config" 2>/dev/null; then
             cat <<EOF >> $HOME/.ssh/config
 

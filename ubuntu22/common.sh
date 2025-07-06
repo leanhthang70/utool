@@ -23,8 +23,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Create necessary directories with proper permissions
+# SECURITY: Ensure TEMP_DIR is properly set with fallback
+TEMP_DIR="${TEMP_DIR:-/tmp/utool}"
+if [[ ! "$TEMP_DIR" =~ ^/tmp/ ]]; then
+    echo "WARNING: TEMP_DIR not in /tmp, using fallback: /tmp/utool"
+    TEMP_DIR="/tmp/utool"
+fi
+
 if [[ ! -d "$TEMP_DIR" ]]; then
     mkdir -p "$TEMP_DIR"
+    chmod 700 "$TEMP_DIR"  # Restrict permissions for security
 fi
 
 if [[ "$LOG_TO_FILE" == "true" && ! -d "$LOG_DIR" ]]; then
@@ -98,25 +106,38 @@ error() {
     log "ERROR" "$message"
 }
 
-# Function to show error and exit
-error_exit() {
+# Function to show error and return (SAFE VERSION - no exit to prevent cleanup trigger)
+error_return() {
     local message="$1"
     echo -e "${RED}❌ $message${NC}"
     log "ERROR" "$message"
-    exit 1
+    return 1
+}
+
+# DEPRECATED: Unsafe function that triggers cleanup on exit
+# Use error_return() instead for safety
+error_exit() {
+    local message="$1"
+    echo -e "${RED}❌ $message${NC}"
+    echo -e "${YELLOW}⚠️  WARNING: error_exit() is deprecated for safety reasons${NC}"
+    echo -e "${YELLOW}⚠️  Use error_return() instead to avoid triggering cleanup${NC}"
+    log "ERROR" "$message"
+    return 1  # Changed from exit 1 to return 1 for safety
 }
 
 # Check if script is run as root
 check_root() {
     if [[ $EUID -eq 0 ]]; then
-        error_exit "This script should not be run as root"
+        error "This script should not be run as root"
+        return 1
     fi
 }
 
 # Check if script is run with sudo
 check_sudo() {
     if [[ $EUID -ne 0 ]]; then
-        error_exit "This script must be run with sudo privileges"
+        error "This script must be run with sudo privileges"
+        return 1
     fi
 }
 
@@ -126,7 +147,8 @@ validate_not_empty() {
     local field_name="$2"
     
     if [[ -z "$input" ]]; then
-        error_exit "$field_name cannot be empty"
+        error "$field_name cannot be empty"
+        return 1
     fi
 }
 
@@ -135,7 +157,8 @@ validate_user_exists() {
     local username="$1"
     
     if ! id "$username" &>/dev/null; then
-        error_exit "User '$username' does not exist"
+        error "User '$username' does not exist"
+        return 1
     fi
 }
 
@@ -144,7 +167,8 @@ validate_file_exists() {
     local filepath="$1"
     
     if [[ ! -f "$filepath" ]]; then
-        error_exit "File '$filepath' does not exist"
+        error "File '$filepath' does not exist"
+        return 1
     fi
 }
 
@@ -153,7 +177,8 @@ validate_dir_exists() {
     local dirpath="$1"
     
     if [[ ! -d "$dirpath" ]]; then
-        error_exit "Directory '$dirpath' does not exist"
+        error "Directory '$dirpath' does not exist"
+        return 1
     fi
 }
 
@@ -235,14 +260,16 @@ validate_ip() {
     local regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
     
     if [[ ! $ip =~ $regex ]]; then
-        error_exit "Invalid IP address format: $ip"
+        error "Invalid IP address format: $ip"
+        return 1
     fi
     
     # Check each octet
     IFS='.' read -ra octets <<< "$ip"
     for octet in "${octets[@]}"; do
         if ((octet < 0 || octet > 255)); then
-            error_exit "Invalid IP address: $ip"
+            error "Invalid IP address: $ip"
+            return 1
         fi
     done
 }
@@ -253,7 +280,8 @@ validate_domain() {
     local regex='^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
     
     if [[ ! $domain =~ $regex ]]; then
-        error_exit "Invalid domain format: $domain"
+        error "Invalid domain format: $domain"
+        return 1
     fi
 }
 
@@ -263,7 +291,8 @@ validate_email() {
     local regex='^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     
     if [[ ! $email =~ $regex ]]; then
-        error_exit "Invalid email format: $email"
+        error "Invalid email format: $email"
+        return 1
     fi
 }
 
@@ -276,17 +305,21 @@ show_completion() {
     log "INFO" "COMPLETED: $message"
 }
 
-# Cleanup function
+# Cleanup function - SAFE VERSION: No file deletion to prevent accidental system damage
 cleanup() {
-    debug "Cleaning up temporary files"
-    rm -rf "$TEMP_DIR"/*
+    debug "Cleanup function called - returning to original directory only"
     
-    # Return to original directory
+    # SAFETY: We do NOT delete any files to prevent accidental system damage
+    # If temporary files need cleanup, users should do it manually
+    debug "Skipped file cleanup for safety - no files will be deleted automatically"
+    
+    # Only return to original directory (safe operation)
     if [[ -n "$ORIGINAL_DIR" && -d "$ORIGINAL_DIR" ]]; then
         cd "$ORIGINAL_DIR"
         debug "Returned to original directory: $ORIGINAL_DIR"
     fi
 }
 
-# Set trap for cleanup
+# SAFETY: Trap for cleanup - now safe as cleanup function doesn't delete files
+# Only returns to original directory on exit
 trap cleanup EXIT

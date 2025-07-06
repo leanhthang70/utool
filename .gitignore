@@ -5,9 +5,6 @@ temp_file
 *.tmp
 *.log
 
-# Resource files (large binaries, downloads)
-resources/
-
 # IDE files
 .vscode/
 .idea/
