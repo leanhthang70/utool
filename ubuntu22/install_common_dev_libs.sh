@@ -35,7 +35,7 @@ echo "📦 Core Development Tools:"
 echo "   • Ruby compilation dependencies"
 echo "   • Build tools (gcc, make, autoconf, etc.)"
 echo "   • SSL, YAML, SQLite, XML libraries"
-echo "   • Node.js (optional)"
+echo "   • NVM + Node.js LTS (version manager)"
 echo "   • wkhtmltopdf (optional)"
 echo "   • Redis server (optional)"
 echo ""
@@ -51,23 +51,65 @@ sudo apt-get install -y git-core curl zlib1g-dev build-essential autoconf bison 
     libxslt1-dev libcurl4-openssl-dev software-properties-common libffi-dev
 show_completion "Ruby dependencies installed"
 
-# Node.js installation
+# Node.js installation via NVM
 echo ""
-echo "🟢 Node.js Installation:"
-echo "   Modern JavaScript runtime for web development"
+echo "🟢 Node.js Installation (via NVM):"
+echo "   Node Version Manager for easy version switching"
 echo ""
-if prompt_yes_no "Do you want to install Node.js?" "y"; then
-    node_version=$(prompt_with_default "Node.js version to install" "18.x")
+if prompt_yes_no "Do you want to install NVM and Node.js?" "y"; then
+    # Install NVM
+    show_progress "Installing NVM (Node Version Manager)"
     
-    show_progress "Installing Node.js $node_version"
-    curl -sL "https://deb.nodesource.com/setup_$node_version" | sudo -E bash -
-    install_package "nodejs"
+    # Download and install NVM
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
     
-    show_completion "Node.js $node_version installed successfully"
-    node --version
-    npm --version
+    # Export NVM for current session
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    
+    # Add NVM to bashrc if not already there
+    if ! grep -q "NVM_DIR" ~/.bashrc; then
+        echo "" >> ~/.bashrc
+        echo "# NVM (Node Version Manager)" >> ~/.bashrc
+        echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.bashrc
+        echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> ~/.bashrc
+        echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> ~/.bashrc
+    fi
+    
+    show_completion "NVM installed successfully"
+    
+    # Install latest LTS Node.js
+    node_version=$(prompt_with_default "Node.js version to install (use 'lts' for latest LTS)" "lts")
+    
+    show_progress "Installing Node.js $node_version via NVM"
+    
+    # Source NVM and install Node.js
+    source ~/.bashrc
+    nvm install "$node_version"
+    nvm use "$node_version"
+    nvm alias default "$node_version"
+    
+    show_completion "Node.js installed successfully via NVM"
+    echo "Node.js version: $(node --version)"
+    echo "npm version: $(npm --version)"
+    echo "NVM version: $(nvm --version)"
+    
+    # Update npm to latest version
+    show_progress "Updating npm to latest version"
+    npm install -g npm@latest
+    echo "Updated npm version: $(npm --version)"
+    
+    echo ""
+    echo "📋 NVM Usage Commands:"
+    echo "   • nvm list                    - List installed Node.js versions"
+    echo "   • nvm install <version>       - Install a specific Node.js version"
+    echo "   • nvm use <version>          - Switch to a specific version"
+    echo "   • nvm alias default <version> - Set default version"
+    echo "   • nvm install --lts          - Install latest LTS version"
+    echo ""
 else
-    log "INFO" "Skipping Node.js installation"
+    log "INFO" "Skipping Node.js/NVM installation"
 fi
 
 # wkhtmltopdf installation

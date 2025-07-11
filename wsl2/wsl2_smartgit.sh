@@ -1,8 +1,8 @@
 #!/bin/bash
 
-echo "Smartgit Version 20_1_6"
+echo "Smartgit Version 19_1_8"
 RESOURCE_PATH="$HOME/.smartgit"
-SMARTGIT_VERSION="smartgit-linux-20_1_6.tar.gz"
+SMARTGIT_VERSION="smartgit-linux-19_1_8.tar.gz"
 
 read -p "=> Smartgit setup (Install enter 1/ Reset enter 2/ Config git 3): " OPTION
 read -p "=> Alias to run SmartGit (default smg): " SMARTGIT_ALIAS

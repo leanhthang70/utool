@@ -83,7 +83,17 @@ Host $host_name
 $user_config
     IdentityFile ~/.ssh/$keyfile
     IdentitiesOnly yes
-EOF
+EOF# Xem version hiện tại
+node --version
+nvm --version
+
+# Cài thêm version khác
+nvm install 18.19.0
+nvm install 21.5.0
+
+# Chuyển đổi version
+nvm use 18.19.0  # Chuyển sang Node 18
+nvm use 21.5.0   # Chuyển sang Node 21
             echo "Config entry added for Host: $host_name (HostName: $hostname_value)"
         else
             echo "Config entry for Host: $host_name already exists."
